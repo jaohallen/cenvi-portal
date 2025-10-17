@@ -8,11 +8,22 @@ const images = [
 ];
 
 const highlights = [
-  "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80"
-,
+  {
+    src: "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=800&q=80",
+    label: "FireCheck 2.0 Community Mapping",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80",
+    label: "Research Collaboration Workshop",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1533750349088-cd871a92f312?auto=format&fit=crop&w=800&q=80",
+    label: "GIS Capacity Building",
+  },
+  {
+    src: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80",
+    label: "Andam Lapu-Lapu",
+  },
 ];
 
 const Home = () => {
@@ -159,17 +170,28 @@ const Home = () => {
         <h3 className="text-3xl font-semibold text-green-700 mb-8 text-center">
           Project Highlights
         </h3>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {highlights.map((src, i) => (
+
+        <div className="flex flex-wrap justify-center gap-8">
+          {highlights.map((item, i) => (
             <motion.div
               key={i}
-              className="rounded-xl overflow-hidden shadow-md hover:shadow-lg transition"
+              className="relative rounded-xl overflow-hidden shadow-md hover:shadow-lg transition group w-[500px]"
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.2 }}
             >
-              <img src={src} alt={`highlight-${i}`} className="w-full h-64 object-cover" />
+              {/* Image */}
+              <img
+                src={item.src}
+                alt={item.label}
+                className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500"
+              />
+
+              {/* Label overlay */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-center p-4">
+                <h4 className="text-lg font-semibold drop-shadow-md">{item.label}</h4>
+              </div>
             </motion.div>
           ))}
         </div>
