@@ -8,6 +8,8 @@ import Services from "./pages/Services";
 import Collaborators from "./pages/Collaborators";
 import Contact from "./pages/Contact";
 import WebMap from "./pages/WebMap";
+import Datasets from "./pages/Datasets";
+
 
 import "./index.css";
 
@@ -34,6 +36,7 @@ function App() {
 
             {/* Separate Web Map page */}
             <Route path="/webmap" element={<WebMap />} />
+            <Route path="/datasets" element={<Datasets />} />
           </Routes>
         </main>
         <Footer />

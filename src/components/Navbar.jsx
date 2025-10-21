@@ -1,96 +1,68 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
   const [isScrolled, setIsScrolled] = useState(false);
   const dropdownRef = useRef(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  const handleScroll = (id) => {
-    const section = document.getElementById(id);
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" });
-      setIsOpen(false);
+  const isDatasetsPage = location.pathname === "/datasets";
+
+  const handleScrollToSection = (id) => {
+    if (isDatasetsPage) {
+      navigate("/"); // Go home, then scroll
+      setTimeout(() => {
+        const section = document.getElementById(id);
+        if (section) section.scrollIntoView({ behavior: "smooth" });
+      }, 500);
+    } else {
+      const section = document.getElementById(id);
+      if (section) section.scrollIntoView({ behavior: "smooth" });
     }
+    setIsOpen(false);
   };
 
-  // Track which section is visible for highlighting
-  useEffect(() => {
-    const sections = document.querySelectorAll("section");
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) setActiveSection(entry.target.id);
-        });
-      },
-      { threshold: 0.5 }
-    );
-
-    sections.forEach((section) => observer.observe(section));
-    return () => {
-      sections.forEach((section) => observer.unobserve(section));
-    };
-  }, []);
+  const handleNavigateToDatasets = () => {
+    setIsOpen(false);
+    navigate("/datasets");
+  };
 
   useEffect(() => {
+    if (isDatasetsPage) {
+      setIsScrolled(true);
+      return;
+    }
+
     const handleScroll = () => {
       const carousel = document.querySelector("#home");
       if (carousel) {
         const carouselBottom = carousel.offsetTop + carousel.offsetHeight;
-        // Turn solid the moment we pass the carousel bottom
         setIsScrolled(window.scrollY + 80 >= carouselBottom);
       }
     };
-
     window.addEventListener("scroll", handleScroll);
-    handleScroll(); // initialize on load
+    handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target) &&
-        !event.target.closest("button")
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    } else {
-      document.removeEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
+  }, [isDatasetsPage]);
 
   const handleLogoClick = () => {
-    if (location.pathname !== "/") {
-      window.location.href = "/";
-    } else {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    navigate("/");
   };
 
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
-        isScrolled ? "bg-green-700 text-white shadow-md" : "bg-transparent text-white"
+        isDatasetsPage || isScrolled
+          ? "bg-green-700 text-white shadow-md"
+          : "bg-transparent text-white"
       }`}
     >
       <div className="flex items-center justify-between px-6 lg:px-24 py-4">
-        {/* Logo + Title */}
-        <div 
-          onClick={handleLogoClick}
-          className="flex items-center space-x-3"
-        >
+        {/* Logo */}
+        <div onClick={handleLogoClick} className="flex items-center space-x-3 cursor-pointer">
           <img
             src="/cenvi_logo.png"
             alt="CENVI Logo"
@@ -111,54 +83,83 @@ const Navbar = () => {
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 6h16M4 12h16M4 18h16"
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
 
-        {/* Desktop Links */}
+        {/* Desktop Links (always visible) */}
         <div className="hidden lg:flex space-x-6 font-medium">
-          {["home", "about", "services", "collaborators", "contact"].map((item) => (
+          {["home", "about", "services", "collaborators"].map((item) => (
             <span
               key={item}
-              onClick={() => handleScroll(item)}
-              className={`cursor-pointer capitalize transition ${
-                activeSection === item
-                  ? "text-green-300 font-semibold"
-                  : "hover:text-green-300"
+              onClick={() => handleScrollToSection(item)}
+              className={`cursor-pointer capitalize transition text-white hover:text-green-300 ${
+                activeSection === item ? "font-semibold" : ""
               }`}
             >
               {item}
             </span>
           ))}
+
+          <span
+            onClick={handleNavigateToDatasets}
+            className={`cursor-pointer capitalize transition text-white hover:text-green-300 ${
+              isDatasetsPage ? "font-semibold" : ""
+            }`}
+          >
+            Datasets
+          </span>
+
+          <span
+            onClick={() => handleScrollToSection("contact")}
+            className={`cursor-pointer capitalize transition text-white hover:text-green-300 ${
+              activeSection === "contact" ? "font-semibold" : ""
+            }`}
+          >
+            Contact
+          </span>
         </div>
+
       </div>
 
-      {/* Mobile Dropdown */}
+      {/* ✅ Mobile Dropdown (always visible too) */}
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="lg:hidden bg-white/50 backdrop-blur-md px-6 py-4 space-y-3 text-gray-900 font-medium shadow-md"
+          className="lg:hidden bg-white/50 backdrop-blur-md px-6 py-4 space-y-3 font-medium shadow-md"
         >
-          {["home", "about", "services", "collaborators", "contact"].map((item) => (
+          {["home", "about", "services", "collaborators"].map((item) => (
             <span
               key={item}
-              onClick={() => handleScroll(item)}
-              className={`block text-lg capitalize cursor-pointer transition ${
-                activeSection === item
-                  ? "text-green-700 font-semibold"
-                  : "hover:text-green-700"
+              onClick={() => handleScrollToSection(item)}
+              className={`block text-lg capitalize cursor-pointer text-gray-900 hover:text-green-700 ${
+                activeSection === item ? "font-semibold" : ""
               }`}
             >
               {item}
             </span>
           ))}
+
+          <span
+            onClick={handleNavigateToDatasets}
+            className={`block text-lg capitalize cursor-pointer text-gray-900 hover:text-green-700 ${
+              isDatasetsPage ? "font-semibold" : ""
+            }`}
+          >
+            Datasets
+          </span>
+
+          <span
+            onClick={() => handleScrollToSection("contact")}
+            className={`block text-lg capitalize cursor-pointer text-gray-900 hover:text-green-700 ${
+              activeSection === "contact" ? "font-semibold" : ""
+            }`}
+          >
+            Contact
+          </span>
         </div>
       )}
+
     </nav>
   );
 };

@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "name": "Barangay Boundaries",
+    "type": "Shapefile",
+    "category": "Administrative",
+    "description": "Barangay boundaries of Dumaguete City used for land use and hazard overlay analysis.",
+    "source": "https://drive.google.com/uc?id=EXAMPLE1",
+    "thumbnail": "/thumbnails/barangay.png"
+  },
+  {
+    "id": 2,
+    "name": "Lapu-lapu City Fire Hazard Map 2019",
+    "type": "Raster",
+    "category": "Hazard",
+    "description": "Fire hazard index map derived from building materials, density, and LST.",
+    "source": "https://drive.google.com/uc?id=EXAMPLE2",
+    "thumbnail": "/thumbnails/firehazard.png"
+  },
+  {
+    "id": 3,
+    "name": "Land Use 2023",
+    "type": "Map Layer",
+    "category": "Land Use",
+    "description": "Land use classification map derived from satellite imagery and field validation.",
+    "source": "https://cenvi-geoserver.org/geoserver/wms",
+    "thumbnail": "/thumbnails/landuse.png"
+  },
+  {
+    "id": 4,
+    "name": "Tamlang Valley - Crop Suitability Analysis",
+    "type": "Raster",
+    "category": "Suitability Analysis",
+    "description": "Crop suitability analysis of priority crops in Tamlang Valley using multi-hazard analysis and soil health analysis",
+    "source": "https://cenvi-geoserver.org/geoserver/wms",
+    "thumbnail": "/thumbnails/landuse.png"
+  },
+  {
+    "id": 5,
+    "name": "Mandaue City 100-yr Rain Return Flood Hazard Map",
+    "type": "Map Layer",
+    "category": "Hazard",
+    "description": "100-yr rain return flood hazard map of Mandaue City considering elevation and drainage network",
+    "source": "https://cenvi-geoserver.org/geoserver/wms",
+    "thumbnail": "/thumbnails/landuse.png"
+  }
+]

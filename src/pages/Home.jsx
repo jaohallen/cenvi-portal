@@ -104,7 +104,7 @@ const Home = () => {
             ></button>
           ))}
         </div>
-</div>
+      </div>
 
 
       {/* Welcome Section */}
