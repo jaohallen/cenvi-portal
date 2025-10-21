@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const images = [
   "https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1600&q=80",
@@ -28,6 +28,7 @@ const highlights = [
 
 const Home = () => {
   const [current, setCurrent] = useState(0);
+  const navigate = useNavigate();
 
   // Auto slide every 4 seconds
   useEffect(() => {
@@ -39,7 +40,7 @@ const Home = () => {
 
   return (
     <div className="w-full relative">
-      {/* Carousel Section */}
+      {/* 🔹 Carousel Section */}
       <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] h-[400px] md:h-[550px] overflow-hidden group">
         {images.map((img, index) => (
           <img
@@ -74,9 +75,7 @@ const Home = () => {
 
         {/* 🔹 Right Navigation */}
         <div
-          onClick={() =>
-            setCurrent((prev) => (prev + 1) % images.length)
-          }
+          onClick={() => setCurrent((prev) => (prev + 1) % images.length)}
           className="absolute right-0 top-0 h-full w-[10%] z-20 cursor-pointer flex items-center justify-center bg-transparent hover:bg-black/20 transition"
           title="Next Slide"
         >
@@ -106,120 +105,88 @@ const Home = () => {
         </div>
       </div>
 
+      {/* 🔹 Welcome Section */}
+      <section className="w-full px-8 lg:px-24 py-24 bg-gray-50 text-center flex flex-col items-center">
+        <img
+          src="/cenvi_logo.png"
+          alt="CENVI Logo"
+          className="w-60 h-auto mb-6 drop-shadow-md"
+        />
+        <h2 className="text-4xl md:text-5xl font-bold text-green-800 mb-10 text-center tracking-tight relative">
+          <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-green-600 after:mx-auto after:mt-2">
+            Welcome to CENVI
+          </span>
+        </h2>
+        <p className="text-lg text-gray-700 max-w-3xl mb-10">
+          The Center for Environmental Informatics (CENVI) advances environmental
+          resilience through data-driven research, geospatial analytics, and community
+          engagement.
+        </p>
 
-      {/* Welcome Section */}
-      <section className="w-full px-8 lg:px-24 py-24 bg-gray-50">
-        <motion.div
-          className="text-center flex flex-col items-center"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <img
-            src="/cenvi_logo.png"
-            alt="CENVI Logo"
-            className="w-60 h-auto mb-6 drop-shadow-md"
-          />
-          <h2 className="text-4xl md:text-5xl font-bold text-green-800 mb-10 text-center tracking-tight relative">
-            <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-green-600 after:mx-auto after:mt-2">
-              Welcome to CENVI
-            </span>
-          </h2>
-          <p className="text-lg text-gray-700 max-w-3xl">
-            The Center for Environmental Informatics (CENVI) advances environmental resilience
-            through data-driven research, geospatial analytics, and community engagement.
-          </p>
-        </motion.div>
-        
-        <motion.div
-          className="text-center mt-12"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-        >
-          <motion.a
+        {/* Links */}
+        <div className="flex flex-col items-center space-y-4">
+          <a
             onClick={() => {
               const aboutSection = document.getElementById("about");
               if (aboutSection) {
                 aboutSection.scrollIntoView({ behavior: "smooth" });
               }
             }}
-            className="inline-block text-green-700 font-semibold text-lg cursor-pointer hover:text-green-800"
-            whileHover={{
-              y: -3,
-              transition: { type: "spring", stiffness: 300 },
-            }}
+            className="inline-block text-green-700 font-semibold text-lg cursor-pointer hover:text-green-800 transition"
           >
             Learn more about CENVI ↓
-          </motion.a>
-        </motion.div>
+          </a>
 
-
+          <a
+            onClick={() => navigate("/datasets")}
+            className="inline-block text-green-700 font-semibold text-lg cursor-pointer hover:text-green-800 transition"
+          >
+            Explore Datasets →
+          </a>
+        </div>
       </section>
 
-      {/* Highlights Section */}
-      <motion.section
-        className="w-full px-8 lg:px-24 py-20 bg-white"
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-      >
+      {/* 🔹 Project Highlights */}
+      <section className="w-full px-8 lg:px-24 py-20 bg-white">
         <h3 className="text-3xl font-semibold text-green-700 mb-8 text-center">
           Project Highlights
         </h3>
 
         <div className="flex flex-wrap justify-center gap-8">
           {highlights.map((item, i) => (
-            <motion.div
+            <div
               key={i}
               className="relative rounded-xl overflow-hidden shadow-md hover:shadow-lg transition group w-[500px]"
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.2 }}
             >
-              {/* Image */}
               <img
                 src={item.src}
                 alt={item.label}
                 className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500"
               />
-
-              {/* Label overlay */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-center p-4">
                 <h4 className="text-lg font-semibold drop-shadow-md">{item.label}</h4>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
-      </motion.section>
+      </section>
 
-      {/* Web Map*/}
-      <motion.section
-        className="w-full px-8 lg:px-24 py-10"
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.8 }}
-      >
+      {/* 🔹 Interactive Map */}
+      <section className="w-full px-8 lg:px-24 py-10">
         <h3 className="text-3xl font-semibold text-green-700 mb-8 text-center">
           Interactive Web Map
         </h3>
         <p className="text-lg text-gray-700 leading-relaxed mb-6 text-center">
-          Explore geospatial insights through our interactive map — showcasing datasets, research outputs, and field data for various environmental projects.
+          Explore geospatial insights through our interactive map — showcasing datasets,
+          research outputs, and field data for various environmental projects.
         </p>
-
-        {/* Full-width map container with margins */}
         <div className="relative w-full">
           <arcgis-embedded-map
             style={{
               width: "100%",
-              height: "70vh", // scales with screen height
-              minHeight: "400px", // prevents it from being too small
-              maxHeight: "800px", // prevents it from being too tall on large screens
+              height: "70vh",
+              minHeight: "400px",
+              maxHeight: "800px",
               borderRadius: "12px",
             }}
             item-id="5af713038cf54283bbe8141d34a960d7"
@@ -229,8 +196,7 @@ const Home = () => {
             portal-url="https://upcenvi.maps.arcgis.com"
           ></arcgis-embedded-map>
         </div>
-      </motion.section>
-
+      </section>
     </div>
   );
 };
