@@ -10,7 +10,7 @@ const collaborators = {
       url: "https://region7.dost.gov.ph",
     },
     {
-      name: "DepDEV",
+      name: "DEPDev",
       logo: "/Logos/depdev_logo.png",
       url: "#", // update this once DepDEV has an official link
     },

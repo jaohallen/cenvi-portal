@@ -38,7 +38,7 @@
   {
     "id": 5,
     "name": "Mandaue City 100-yr Rain Return Flood Hazard Map",
-    "type": "Map Layer",
+    "type": "Image",
     "category": "Hazard",
     "description": "100-yr rain return flood hazard map of Mandaue City considering elevation and drainage network",
     "source": "https://cenvi-geoserver.org/geoserver/wms",

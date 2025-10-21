@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ Add this import
 import DatasetCard from "../components/DatasetCard";
 import DatasetPreviewModal from "../components/DatasetPreviewModal";
 
@@ -8,6 +9,7 @@ const Datasets = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState(null);
+  const navigate = useNavigate(); // ✅ Initialize navigation
 
   useEffect(() => {
     fetch("/data/datasets.json")
@@ -33,14 +35,32 @@ const Datasets = () => {
 
   const categories = ["All", ...new Set(datasets.map((d) => d.category))];
 
+  // ✅ Navigation to Contact Section
+  const handleContactRedirect = () => {
+    navigate("/#contact");
+  };
+
   return (
     <div className="pt-20 p-6">
       {/* Page Title */}
-      <h2 className="text-4xl md:text-5xl font-bold text-green-800 mb-10 text-center tracking-tight relative">
+      <h2 className="text-4xl md:text-5xl font-bold text-green-800 mt-10 mb-10 text-center tracking-tight relative">
         <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-green-600 after:mx-auto after:mt-2">
           CENVI Datasets Repository
         </span>
       </h2>
+
+     <div className="mb-8 text-center text-gray-700 text-lg">
+        {"If you are interested in acquiring the maps and datasets, "}
+        <button
+            onClick={handleContactRedirect}
+            className="text-green-700 font-semibold hover:underline hover:text-green-800 transition bg-transparent border-none cursor-pointer p-0 m-0 align-baseline"
+            style={{ marginLeft: "-2px" }} 
+        >
+            contact our office.
+        </button>
+        </div>
+
+
 
       {/* ✅ Search + Filter Container with Max Width */}
       <div className="flex flex-col sm:flex-row gap-3 mb-8 mx-auto w-full max-w-4xl">

@@ -21,14 +21,6 @@ const DatasetCard = ({ dataset, onPreview }) => {
           >
             Preview
           </button>
-          <a
-            href={dataset.source}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center px-3 py-2 rounded-lg"
-          >
-            Download
-          </a>
         </div>
       </div>
     </div>
