@@ -53,8 +53,8 @@ const Datasets = () => {
   return (
     <div className="pt-20 p-6 relative">
       {/* Page Title */}
-      <h2 className="text-4xl md:text-5xl font-bold text-green-800 mt-10 mb-10 text-center tracking-tight relative">
-        <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-green-600 after:mx-auto after:mt-2">
+      <h2 className="text-4xl md:text-5xl font-bold text-[#344e41] mt-10 mb-10 text-center tracking-tight relative">
+        <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-[#3a5a40] after:mx-auto after:mt-2">
           CENVI Datasets Repository
         </span>
       </h2>
@@ -64,7 +64,7 @@ const Datasets = () => {
         {"If you are interested in acquiring the maps and datasets, "}
         <button
           onClick={() => setShowContactModal(true)}
-          className="text-green-700 font-semibold hover:underline hover:text-green-800 transition bg-transparent border-none cursor-pointer p-0 m-0 align-baseline"
+          className="text-[#3a5a40] font-semibold hover:underline hover:text-[#588157] transition bg-transparent border-none cursor-pointer p-0 m-0 align-baseline"
           style={{ marginLeft: "-2px" }}
         >
           contact our office.
@@ -78,13 +78,13 @@ const Datasets = () => {
           placeholder="🔍 Search datasets..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 px-4 py-2 rounded-lg bg-gray-100 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-700 placeholder-gray-500"
+          className="flex-1 px-4 py-2 rounded-lg bg-gray-100 border border-gray-300 focus:ring-2 focus:ring-[#588157] focus:outline-none text-gray-700 placeholder-gray-500"
         />
 
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="flex-1 sm:flex-none sm:w-1/4 px-4 py-2 rounded-lg bg-gray-100 border border-gray-300 focus:ring-2 focus:ring-green-500 focus:outline-none text-gray-700"
+          className="flex-1 sm:flex-none sm:w-1/4 px-4 py-2 rounded-lg bg-gray-100 border border-gray-300 focus:ring-2 focus:ring-[#588157] focus:outline-none text-gray-700"
         >
           {categories.map((cat) => (
             <option key={cat}>{cat}</option>
@@ -117,12 +117,12 @@ const Datasets = () => {
             <button
               onClick={() => setShowContactModal(false)}
               aria-label="Close contact dialog"                  
-              className="absolute top-4 right-4 text-green-600 hover:text-green-700 text-l font-bold bg-transparent"
+              className="absolute top-4 right-4 text-[#3a5a40] hover:text-[#588157] text-l font-bold bg-transparent"
             >
               ✕
             </button>
 
-            <h3 className="text-2xl font-semibold text-green-700 mb-4">
+            <h3 className="text-2xl font-semibold text-[#3a5a40] mb-4">
               Contact Information
             </h3>
 
@@ -133,7 +133,7 @@ const Datasets = () => {
               </p>
               <button
                 onClick={() => handleCopy(email, "email")}
-                className="btn btn-outline text-sm px-3 py-1"
+                className="btn btn-outline border-[#3A5A40] text-sm px-3 py-1 text-[#3a5a40]"
               >
                 {copiedField === "email" ? "Copied!" : "Copy"}
               </button>
@@ -146,7 +146,7 @@ const Datasets = () => {
               </p>
               <button
                 onClick={() => handleCopy(phone, "phone")}
-                className="btn btn-outline text-sm px-3 py-1"
+                className="btn btn-outline border-[#3A5A40] text-sm px-3 py-1 text-[#3a5a40]"
               >
                 {copiedField === "phone" ? "Copied!" : "Copy"}
               </button>

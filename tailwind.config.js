@@ -4,8 +4,14 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    'bg-cenvi-green',
+    'text-cenvi-green',
+    'border-cenvi-green'
+  ],
   theme: {
-    extend: {},
+    extend: {
+    },
   },
   plugins: [],
 };

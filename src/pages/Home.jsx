@@ -103,7 +103,7 @@ const Home = () => {
                 key={index}
                 onClick={() => setCurrent(index)}
                 className={`w-3 h-3 rounded-full ${
-                  current === index ? "bg-green-600" : "bg-gray-300"
+                  current === index ? "bg-[#3a5a40]" : "bg-gray-300"
                 }`}
               ></button>
             ))}
@@ -117,8 +117,8 @@ const Home = () => {
           alt="CENVI Logo"
           className="w-60 h-auto mb-6 drop-shadow-md"
         />
-        <h2 className="text-4xl md:text-5xl font-bold text-green-800 mb-10 text-center tracking-tight relative">
-          <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-green-600 after:mx-auto after:mt-2">
+        <h2 className="text-4xl md:text-5xl font-bold text-[#344E41] mb-10 text-center tracking-tight relative">
+          <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-[#3a5a40] after:mx-auto after:mt-2">
             Welcome to CENVI
           </span>
         </h2>
@@ -135,14 +135,14 @@ const Home = () => {
               const aboutSection = document.getElementById("about");
               if (aboutSection) aboutSection.scrollIntoView({ behavior: "smooth" });
             }}
-            className="text-green-700 font-semibold text-lg cursor-pointer hover:text-green-800 transition"
+            className="text-[#3a5a40] font-semibold text-lg cursor-pointer hover:text-[#588157] transition"
           >
             Learn more about CENVI ↓
           </a>
 
           <a
             onClick={() => navigate("/datasets")}
-            className="text-green-700 font-semibold text-lg cursor-pointer hover:text-green-800 transition"
+            className="text-[#3a5a40] font-semibold text-lg cursor-pointer hover:text-[#588157] transition"
           >
             Explore Datasets →
           </a>
@@ -150,7 +150,7 @@ const Home = () => {
       </section>
 
       <section className="w-full px-8 lg:px-24 py-20 bg-white">
-        <h3 className="text-3xl font-semibold text-green-700 mb-8 text-center">
+        <h3 className="text-3xl font-semibold text-[#3a5a40] mb-8 text-center">
           Project Highlights
         </h3>
 
@@ -183,7 +183,7 @@ const Home = () => {
       </section>
 
       <section className="w-full px-8 lg:px-24 py-10">
-        <h3 className="text-3xl font-semibold text-green-700 mb-8 text-center">
+        <h3 className="text-3xl font-semibold text-[#3a5a40] mb-8 text-center">
           Interactive Web Map
         </h3>
         <p className="text-lg text-gray-700 leading-relaxed mb-6 text-center">

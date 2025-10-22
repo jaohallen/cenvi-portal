@@ -27,12 +27,12 @@ const DatasetPreviewModal = ({ dataset, onClose }) => {
       <div className="bg-white rounded-2xl w-11/12 md:w-3/4 lg:w-2/3 shadow-xl p-4 relative">
         <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-green-600 hover:text-green-800 text-l font-bold bg-transparent border-none cursor-pointer transition-colors"
+            className="absolute top-4 right-4 text-[#3a5a40] hover:text-[#588157] text-l font-bold bg-transparent border-none cursor-pointer transition-colors"
         >
         ✕
         </button>
 
-        <h2 className="text-xl font-bold mb-2 text-green-800">
+        <h2 className="text-xl font-bold mb-2 text-[#3a5a40]">
           {dataset.name}
         </h2>
         <p className="text-gray-600 mb-3">{dataset.description}</p>

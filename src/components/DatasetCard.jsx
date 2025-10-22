@@ -22,7 +22,7 @@ const DatasetCard = ({ dataset, onPreview }) => {
         <div className="flex gap-2">
           <button
             onClick={() => onPreview(dataset)}
-            className="flex-1 bg-green-700 hover:bg-green-600 text-white px-3 py-2 rounded-lg"
+            className="flex-1 bg-[#3a5a40] hover:bg-[#588157] text-white px-3 py-2 rounded-lg"
           >
             Preview
           </button>

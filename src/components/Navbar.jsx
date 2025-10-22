@@ -56,7 +56,7 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
         isDatasetsPage || isScrolled
-          ? "bg-green-800 backdrop-blur-md shadow-md text-white"
+          ? "bg-[#344E41] backdrop-blur-md shadow-md text-white"
           : "bg-white/30 backdrop-blur-md"
       }`}
     >
@@ -76,7 +76,7 @@ const Navbar = () => {
           />
           <span
             className={`text-xl font-bold transition-colors duration-500 ${
-              isDatasetsPage || isScrolled ? "text-white" : "text-black"
+              isDatasetsPage || isScrolled ? "text-white" : "text-[#344e41]"
             }`}
           >
             CENVI
@@ -93,8 +93,8 @@ const Navbar = () => {
             xmlns="http://www.w3.org/2000/svg"
             className={`h-6 w-6 transition ${
               isDatasetsPage || isScrolled
-                ? "text-white hover:text-green-300"
-                : "text-black hover:text-green-900"
+                ? "text-[white] hover:text-[#588157]"
+                : "text-[#344e41] hover:text-[#588157]"
             }`}
             fill="none"
             viewBox="0 0 24 24"
@@ -119,7 +119,7 @@ const Navbar = () => {
             <span
               key={item}
               onClick={() => handleScrollToSection(item)}
-              className="cursor-pointer capitalize transition hover:text-green-700"
+              className="cursor-pointer capitalize transition hover:text-[#588157]"
               role="button"
               tabIndex={0}
               onKeyDown={(e) =>
@@ -132,7 +132,7 @@ const Navbar = () => {
 
           <span
             onClick={handleNavigateToDatasets}
-            className={`cursor-pointer capitalize transition hover:text-green-700 ${
+            className={`cursor-pointer capitalize transition hover:text-[#588157] ${
               isDatasetsPage ? "font-semibold" : ""
             }`}
           >
@@ -141,7 +141,7 @@ const Navbar = () => {
 
           <span
             onClick={() => handleScrollToSection("contact")}
-            className={`cursor-pointer capitalize transition hover:text-green-700 ${
+            className={`cursor-pointer capitalize transition hover:text-[#588157] ${
               activeSection === "contact" ? "font-semibold" : ""
             }`}
           >
@@ -154,7 +154,7 @@ const Navbar = () => {
       {isOpen && (
         <div
           ref={dropdownRef}
-          className={`lg:hidden bg-white/30 backdrop-blur-md border-t text-center px-6 py-4 space-y-3 font-medium shadow-md animate-fadeIn ${
+          className={`lg:hidden bg-[#3a5a40]/30 backdrop-blur-md border-t text-center px-6 py-4 space-y-3 font-medium shadow-md animate-fadeIn ${
             isDatasetsPage || isScrolled ? "text-white" : "text-black"
           }`}
         >
@@ -162,7 +162,7 @@ const Navbar = () => {
             <span
               key={item}
               onClick={() => handleScrollToSection(item)}
-              className={`block text-lg capitalize cursor-pointer hover:text-green-700 ${
+              className={`block text-lg capitalize cursor-pointer hover:text-[#588157] ${
                 activeSection === item ? "font-semibold" : ""
               }`}
             >
@@ -172,7 +172,7 @@ const Navbar = () => {
 
           <span
             onClick={handleNavigateToDatasets}
-            className={`block text-lg capitalize cursor-pointer hover:text-green-700 ${
+            className={`block text-lg capitalize cursor-pointer hover:text-[#588157] ${
               isDatasetsPage ? "font-semibold" : ""
             }`}
           >
@@ -181,7 +181,7 @@ const Navbar = () => {
 
           <span
             onClick={() => handleScrollToSection("contact")}
-            className={`block text-lg capitalize cursor-pointer hover:text-green-700 ${
+            className={`block text-lg capitalize cursor-pointer hover:text-[#588157] ${
               activeSection === "contact" ? "font-semibold" : ""
             }`}
           >

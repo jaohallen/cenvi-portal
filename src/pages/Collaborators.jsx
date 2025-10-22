@@ -60,8 +60,8 @@ const Collaborators = () => {
       viewport={{ once: true }}
       transition={{ duration: 0.8 }}
     >
-      <h2 className="text-4xl md:text-5xl font-bold text-green-800 mb-10 text-center tracking-tight relative">
-        <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-green-600 after:mx-auto after:mt-2">
+      <h2 className="text-4xl md:text-5xl font-bold text-[#344e41] mb-10 text-center tracking-tight relative">
+        <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-[#3a5a40] after:mx-auto after:mt-2">
           Our Collaborators
         </span>
       </h2>
@@ -69,11 +69,11 @@ const Collaborators = () => {
       {/* Render each group */}
       {Object.entries(collaborators).map(([group, items]) => (
         <div key={group} className="mb-12">
-          <h3 className="text-2xl font-semibold text-green-700 mb-6 text-center">
+          <h3 className="text-2xl font-semibold text-[#588157] mb-6 text-center">
             {group}
           </h3>
 
-          <div className="flex flex-wrap justify-center items-center gap-10">
+          <div className="flex flex-wrap justify-center items-start gap-10">
             {items.map((col) => (
               <a
                 key={col.name}
@@ -93,6 +93,7 @@ const Collaborators = () => {
               </a>
             ))}
           </div>
+
         </div>
       ))}
     </motion.section>
