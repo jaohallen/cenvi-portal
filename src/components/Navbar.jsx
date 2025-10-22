@@ -13,7 +13,7 @@ const Navbar = () => {
 
   const handleScrollToSection = (id) => {
     if (isDatasetsPage) {
-      navigate("/"); // Go home, then scroll
+      navigate("/");
       setTimeout(() => {
         const section = document.getElementById(id);
         if (section) section.scrollIntoView({ behavior: "smooth" });
@@ -56,42 +56,75 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
         isDatasetsPage || isScrolled
-          ? "bg-green-700 text-white shadow-md"
-          : "bg-transparent text-white"
+          ? "bg-green-700/80 backdrop-blur-md shadow-md text-white"
+          : "bg-white/30 backdrop-blur-md text-white"
       }`}
     >
       <div className="flex items-center justify-between px-6 lg:px-24 py-4">
-        {/* Logo */}
-        <div onClick={handleLogoClick} className="flex items-center space-x-3 cursor-pointer" role="link" aria-label="Go to home">
-          <img src="/cenvi_logo.png" alt="CENVI Logo" className="w-10 h-10 rounded-full object-cover" />
-          <span className="text-xl font-bold">CENVI</span>
+        {/* 🔹 Logo */}
+        <div
+          onClick={handleLogoClick}
+          className="flex items-center space-x-3 cursor-pointer"
+          role="link"
+          aria-label="Go to home"
+        >
+          <img
+            src="/cenvi_logo.png"
+            alt="CENVI Logo"
+            className="h-10 md:h-12 w-auto object-contain"
+            style={{ maxHeight: "48px" }}
+          />
+          <span
+            className={`text-xl font-bold transition-colors duration-500 ${
+              isDatasetsPage || isScrolled ? "text-white" : "text-black"
+            }`}
+          >
+            CENVI
+          </span>
         </div>
 
-        {/* Hamburger */}
+        {/* 🔹 Hamburger */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="lg:hidden bg-transparent border-none focus:outline-none"
-          aria-label="Toggle navigation menu"                 // ✅ a11y
+          aria-label="Toggle navigation menu"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 text-white hover:text-green-300 transition"
+            className={`h-6 w-6 transition ${
+              isDatasetsPage || isScrolled
+                ? "text-white hover:text-green-300"
+                : "text-black hover:text-green-900"
+            }`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d={
+                isOpen
+                  ? "M6 18L18 6M6 6l12 12" // X icon
+                  : "M4 6h16M4 12h16M4 18h16" // Hamburger
+              }
+            />
           </svg>
         </button>
 
-        {/* Desktop Links (always visible) */}
-        <div className="hidden lg:flex space-x-6 font-medium">
+        {/* 🔹 Desktop Links */}
+        <div className="hidden lg:flex space-x-6 font-medium text-black">
           {["home", "about", "services", "collaborators"].map((item) => (
             <span
-              onClick={() => handleScrollToSection("about")}
-              className="cursor-pointer capitalize transition text-white hover:text-green-300"
-              role="button" tabIndex={0}                        // ✅ keyboard nav
-              onKeyDown={(e) => e.key === "Enter" && handleScrollToSection("about")}
+              key={item}
+              onClick={() => handleScrollToSection(item)}
+              className="cursor-pointer capitalize transition hover:text-green-700"
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) =>
+                e.key === "Enter" && handleScrollToSection(item)
+              }
             >
               {item}
             </span>
@@ -99,7 +132,7 @@ const Navbar = () => {
 
           <span
             onClick={handleNavigateToDatasets}
-            className={`cursor-pointer capitalize transition text-white hover:text-green-300 ${
+            className={`cursor-pointer capitalize transition hover:text-green-700 ${
               isDatasetsPage ? "font-semibold" : ""
             }`}
           >
@@ -108,27 +141,26 @@ const Navbar = () => {
 
           <span
             onClick={() => handleScrollToSection("contact")}
-            className={`cursor-pointer capitalize transition text-white hover:text-green-300 ${
+            className={`cursor-pointer capitalize transition hover:text-green-700 ${
               activeSection === "contact" ? "font-semibold" : ""
             }`}
           >
             Contact
           </span>
         </div>
-
       </div>
 
-      {/* ✅ Mobile Dropdown (always visible too) */}
+      {/* 🔹 Mobile Dropdown (Always same transparency) */}
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="lg:hidden bg-white/50 backdrop-blur-md px-6 py-4 space-y-3 font-medium shadow-md"
+          className="lg:hidden bg-white/40 backdrop-blur-md border-t border-green-100 text-center px-6 py-4 space-y-3 font-medium text-gray-900 shadow-md animate-fadeIn"
         >
           {["home", "about", "services", "collaborators"].map((item) => (
             <span
               key={item}
               onClick={() => handleScrollToSection(item)}
-              className={`block text-lg capitalize cursor-pointer text-gray-900 hover:text-green-700 ${
+              className={`block text-lg capitalize cursor-pointer hover:text-green-700 ${
                 activeSection === item ? "font-semibold" : ""
               }`}
             >
@@ -138,7 +170,7 @@ const Navbar = () => {
 
           <span
             onClick={handleNavigateToDatasets}
-            className={`block text-lg capitalize cursor-pointer text-gray-900 hover:text-green-700 ${
+            className={`block text-lg capitalize cursor-pointer hover:text-green-700 ${
               isDatasetsPage ? "font-semibold" : ""
             }`}
           >
@@ -147,7 +179,7 @@ const Navbar = () => {
 
           <span
             onClick={() => handleScrollToSection("contact")}
-            className={`block text-lg capitalize cursor-pointer text-gray-900 hover:text-green-700 ${
+            className={`block text-lg capitalize cursor-pointer hover:text-green-700 ${
               activeSection === "contact" ? "font-semibold" : ""
             }`}
           >
@@ -155,7 +187,6 @@ const Navbar = () => {
           </span>
         </div>
       )}
-
     </nav>
   );
 };

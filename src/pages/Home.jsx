@@ -4,25 +4,31 @@ import { useNavigate } from "react-router-dom";
 const Home = () => {
   const [carousel, setCarousel] = useState([]);
   const [highlights, setHighlights] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null); // ✅ new state
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
 
-  // 🔗 Replace this with your actual Apps Script JSON URL
   const SHEET_JSON_URL =
     "https://script.google.com/macros/s/AKfycbwgR7Ct4i0LfrdXBGPL0ECOrt6JGmVqn_qqADdWuv6hMYuEs7p9buhYVVX0MANiSlkuCQ/exec";
 
-  // 📥 Fetch JSON data (Carousel + Highlights)
   useEffect(() => {
-    fetch(SHEET_JSON_URL)
-      .then((res) => res.json())
-      .then((data) => {
-        setCarousel(data.carousel || []);
-        setHighlights(data.highlights || []);
-      })
-      .catch((err) => console.error("Error loading content:", err));
+    const fetchData = () => {
+      fetch(SHEET_JSON_URL)
+        .then((res) => res.json())
+        .then((data) => {
+          setCarousel(data.carousel || []);
+          setHighlights(data.highlights || []);
+          setLastUpdated(data.lastUpdated || null);
+        })
+        .catch((err) => console.error("Error loading content:", err));
+    };
+
+    fetchData();
+
+    const interval = setInterval(fetchData, 600000);
+    return () => clearInterval(interval);
   }, []);
 
-  // ⏱️ Auto slide every 4 seconds
   useEffect(() => {
     if (carousel.length === 0) return;
     const timer = setInterval(
@@ -32,9 +38,22 @@ const Home = () => {
     return () => clearInterval(timer);
   }, [carousel]);
 
+  const formatDate = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    return date.toLocaleString("en-PH", {
+      timeZone: "Asia/Manila",
+      weekday: "short",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   return (
     <div className="w-full relative">
-      {/* 🔹 Carousel Section */}
       <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] h-[400px] md:h-[550px] overflow-hidden group">
         {carousel.length > 0 ? (
           carousel.map((item, index) => (
@@ -53,7 +72,6 @@ const Home = () => {
           </div>
         )}
 
-        {/* 🔹 Navigation */}
         <div
           onClick={() =>
             setCurrent((prev) => (prev === 0 ? carousel.length - 1 : prev - 1))
@@ -105,7 +123,6 @@ const Home = () => {
         )}
       </div>
 
-      {/* 🔹 Welcome Section */}
       <section className="w-full px-8 lg:px-24 py-24 bg-gray-50 text-center flex flex-col items-center">
         <img
           src="/cenvi_logo.png"
@@ -144,7 +161,6 @@ const Home = () => {
         </div>
       </section>
 
-      {/* 🔹 Project Highlights */}
       <section className="w-full px-8 lg:px-24 py-20 bg-white">
         <h3 className="text-3xl font-semibold text-green-700 mb-8 text-center">
           Project Highlights
@@ -178,7 +194,6 @@ const Home = () => {
         )}
       </section>
 
-      {/* 🔹 Interactive Map */}
       <section className="w-full px-8 lg:px-24 py-10">
         <h3 className="text-3xl font-semibold text-green-700 mb-8 text-center">
           Interactive Web Map
