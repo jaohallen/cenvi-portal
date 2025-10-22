@@ -38,19 +38,7 @@ const Home = () => {
     return () => clearInterval(timer);
   }, [carousel]);
 
-  const formatDate = (isoString) => {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    return date.toLocaleString("en-PH", {
-      timeZone: "Asia/Manila",
-      weekday: "short",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  const [selectedImage, setSelectedImage] = useState(null);
 
   return (
     <div className="w-full relative">
@@ -171,22 +159,22 @@ const Home = () => {
             {highlights.map((item, i) => (
               <div
                 key={i}
-                className="relative rounded-xl overflow-hidden shadow-md hover:shadow-lg transition group w-[500px]"
+                onClick={() => setSelectedImage(item.src)}
+                className="relative rounded-xl overflow-hidden shadow-md hover:shadow-lg transition group w-[500px] cursor-pointer"
               >
                 <img
                   src={item.src}
                   alt={item.title}
                   className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-center p-4">
-                  <h4 className="text-lg font-semibold drop-shadow-md">
-                    {item.title}
-                  </h4>
+                <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm text-white text-center p-4 rounded-t-xl">
+                  <h4 className="text-lg font-semibold drop-shadow-md">{item.title}</h4>
                   {item.description && (
                     <p className="text-sm opacity-90 mt-1">{item.description}</p>
                   )}
                 </div>
               </div>
+
             ))}
           </div>
         ) : (
@@ -219,6 +207,26 @@ const Home = () => {
           ></arcgis-embedded-map>
         </div>
       </section>
+      
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 transition-opacity duration-500 animate-fadeIn"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div
+            className="relative max-w-5xl max-h-[90vh] p-4"
+            onClick={(e) => e.stopPropagation()} // prevent closing when clicking image
+          >
+            <img
+              src={selectedImage}
+              alt="Preview"
+              className="w-auto max-w-full h-auto max-h-[85vh] rounded-xl shadow-lg object-contain transition-transform duration-500 transform hover:scale-105"
+            />
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 };
