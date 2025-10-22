@@ -29,7 +29,7 @@ const DatasetPreviewModal = ({ dataset, onClose }) => {
         {/* Close Button */}
         <button
             onClick={onClose}
-            className="absolute top-1 right-1 text-green-600 hover:text-green-800 text-l font-bold bg-transparent border-none cursor-pointer transition-colors"
+            className="absolute top-4 right-4 text-green-600 hover:text-green-800 text-l font-bold bg-transparent border-none cursor-pointer transition-colors"
         >
         ✕
         </button>

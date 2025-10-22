@@ -62,12 +62,8 @@ const Navbar = () => {
     >
       <div className="flex items-center justify-between px-6 lg:px-24 py-4">
         {/* Logo */}
-        <div onClick={handleLogoClick} className="flex items-center space-x-3 cursor-pointer">
-          <img
-            src="/cenvi_logo.png"
-            alt="CENVI Logo"
-            className="w-10 h-10 rounded-full object-cover"
-          />
+        <div onClick={handleLogoClick} className="flex items-center space-x-3 cursor-pointer" role="link" aria-label="Go to home">
+          <img src="/cenvi_logo.png" alt="CENVI Logo" className="w-10 h-10 rounded-full object-cover" />
           <span className="text-xl font-bold">CENVI</span>
         </div>
 
@@ -75,6 +71,7 @@ const Navbar = () => {
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="lg:hidden bg-transparent border-none focus:outline-none"
+          aria-label="Toggle navigation menu"                 // ✅ a11y
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -91,11 +88,10 @@ const Navbar = () => {
         <div className="hidden lg:flex space-x-6 font-medium">
           {["home", "about", "services", "collaborators"].map((item) => (
             <span
-              key={item}
-              onClick={() => handleScrollToSection(item)}
-              className={`cursor-pointer capitalize transition text-white hover:text-green-300 ${
-                activeSection === item ? "font-semibold" : ""
-              }`}
+              onClick={() => handleScrollToSection("about")}
+              className="cursor-pointer capitalize transition text-white hover:text-green-300"
+              role="button" tabIndex={0}                        // ✅ keyboard nav
+              onKeyDown={(e) => e.key === "Enter" && handleScrollToSection("about")}
             >
               {item}
             </span>

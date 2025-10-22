@@ -36,6 +36,11 @@ const Datasets = () => {
     setFiltered(result);
   }, [category, search, datasets]);
 
+  useEffect(() => {
+    document.body.style.overflow = showContactModal ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [showContactModal]);
+
   const categories = ["All", ...new Set(datasets.map((d) => d.category))];
 
   // ✅ Copy handler
@@ -106,13 +111,13 @@ const Datasets = () => {
           onClick={() => setShowContactModal(false)} // close when clicking background
         >
           <div
-            className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center relative animate-fadeIn"
-            onClick={(e) => e.stopPropagation()} // prevent close on content click
+            className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center relative animate-fadeIn"
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* ❌ Close Button (Top-right X) */}
             <button
               onClick={() => setShowContactModal(false)}
-              className="absolute top-1 right-1 text-green-600 hover:text-green-800 text-l font-bold bg-transparent border-none cursor-pointer transition-colors"
+              aria-label="Close contact dialog"                  
+              className="absolute top-4 right-4 text-green-600 hover:text-green-700 text-l font-bold bg-transparent"
             >
               ✕
             </button>
@@ -128,7 +133,7 @@ const Datasets = () => {
               </p>
               <button
                 onClick={() => handleCopy(email, "email")}
-                className="ml-3 px-3 py-1 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded transition"
+                className="btn btn-outline text-sm px-3 py-1"
               >
                 {copiedField === "email" ? "Copied!" : "Copy"}
               </button>
@@ -141,7 +146,7 @@ const Datasets = () => {
               </p>
               <button
                 onClick={() => handleCopy(phone, "phone")}
-                className="ml-3 px-3 py-1 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded transition"
+                className="btn btn-outline text-sm px-3 py-1"
               >
                 {copiedField === "phone" ? "Copied!" : "Copy"}
               </button>
