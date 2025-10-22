@@ -167,7 +167,7 @@ const Home = () => {
                   alt={item.title}
                   className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm text-white text-center p-4 rounded-t-xl">
+                <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm text-white text-center p-4 ">
                   <h4 className="text-lg font-semibold drop-shadow-md">{item.title}</h4>
                   {item.description && (
                     <p className="text-sm opacity-90 mt-1">{item.description}</p>
