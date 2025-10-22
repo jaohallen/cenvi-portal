@@ -56,8 +56,8 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
         isDatasetsPage || isScrolled
-          ? "bg-green-700/80 backdrop-blur-md shadow-md text-white"
-          : "bg-white/30 backdrop-blur-md text-white"
+          ? "bg-green-700/60 backdrop-blur-md shadow-md text-white"
+          : "bg-white/30 backdrop-blur-md"
       }`}
     >
       <div className="flex items-center justify-between px-6 lg:px-24 py-4">
@@ -114,7 +114,7 @@ const Navbar = () => {
         </button>
 
         {/* 🔹 Desktop Links */}
-        <div className="hidden lg:flex space-x-6 font-medium text-black">
+        <div className="hidden lg:flex space-x-6 font-medium">
           {["home", "about", "services", "collaborators"].map((item) => (
             <span
               key={item}
@@ -150,11 +150,13 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* 🔹 Mobile Dropdown (Always same transparency) */}
+      {/* 🔹 Mobile Dropdown — adaptive text color */}
       {isOpen && (
         <div
           ref={dropdownRef}
-          className="lg:hidden bg-white/40 backdrop-blur-md border-t border-green-100 text-center px-6 py-4 space-y-3 font-medium text-gray-900 shadow-md animate-fadeIn"
+          className={`lg:hidden bg-white/30 backdrop-blur-md border-t text-center px-6 py-4 space-y-3 font-medium shadow-md animate-fadeIn ${
+            isDatasetsPage || isScrolled ? "text-white" : "text-black"
+          }`}
         >
           {["home", "about", "services", "collaborators"].map((item) => (
             <span
