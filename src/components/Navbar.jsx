@@ -56,7 +56,7 @@ const Navbar = () => {
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
         isDatasetsPage || isScrolled
-          ? "bg-green-700/60 backdrop-blur-md shadow-md text-white"
+          ? "bg-green-800 backdrop-blur-md shadow-md text-white"
           : "bg-white/30 backdrop-blur-md"
       }`}
     >

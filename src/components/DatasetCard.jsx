@@ -1,8 +1,8 @@
 import React from "react";
 
 const DatasetCard = ({ dataset, onPreview }) => {
-  // ✅ Fallback image
-  const placeholder = "/vite.svg"; // or add /thumbnails/placeholder.png later
+
+  const placeholder = "/cenvi_logo.png";
 
   return (
     <div className="rounded-2xl shadow-md hover:shadow-xl transition-all bg-white overflow-hidden">
@@ -22,7 +22,7 @@ const DatasetCard = ({ dataset, onPreview }) => {
         <div className="flex gap-2">
           <button
             onClick={() => onPreview(dataset)}
-            className="flex-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg"
+            className="flex-1 bg-green-700 hover:bg-green-600 text-white px-3 py-2 rounded-lg"
           >
             Preview
           </button>
