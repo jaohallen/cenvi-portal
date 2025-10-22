@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // ✅ Add this import
 import DatasetCard from "../components/DatasetCard";
 import DatasetPreviewModal from "../components/DatasetPreviewModal";
 
@@ -9,7 +8,11 @@ const Datasets = () => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [selected, setSelected] = useState(null);
-  const navigate = useNavigate(); // ✅ Initialize navigation
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [copiedField, setCopiedField] = useState("");
+
+  const email = "upcebunicer@gmail.com";
+  const phone = "+63 912 345 6789";
 
   useEffect(() => {
     fetch("/data/datasets.json")
@@ -35,13 +38,15 @@ const Datasets = () => {
 
   const categories = ["All", ...new Set(datasets.map((d) => d.category))];
 
-  // ✅ Navigation to Contact Section
-  const handleContactRedirect = () => {
-    navigate("/#contact");
+  // ✅ Copy handler
+  const handleCopy = (text, field) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(""), 1500);
   };
 
   return (
-    <div className="pt-20 p-6">
+    <div className="pt-20 p-6 relative">
       {/* Page Title */}
       <h2 className="text-4xl md:text-5xl font-bold text-green-800 mt-10 mb-10 text-center tracking-tight relative">
         <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-green-600 after:mx-auto after:mt-2">
@@ -49,20 +54,19 @@ const Datasets = () => {
         </span>
       </h2>
 
-     <div className="mb-8 text-center text-gray-700 text-lg">
+      {/* Contact Line */}
+      <div className="mb-8 text-center text-gray-700 text-lg">
         {"If you are interested in acquiring the maps and datasets, "}
         <button
-            onClick={handleContactRedirect}
-            className="text-green-700 font-semibold hover:underline hover:text-green-800 transition bg-transparent border-none cursor-pointer p-0 m-0 align-baseline"
-            style={{ marginLeft: "-2px" }} 
+          onClick={() => setShowContactModal(true)}
+          className="text-green-700 font-semibold hover:underline hover:text-green-800 transition bg-transparent border-none cursor-pointer p-0 m-0 align-baseline"
+          style={{ marginLeft: "-2px" }}
         >
-            contact our office.
+          contact our office.
         </button>
-        </div>
+      </div>
 
-
-
-      {/* ✅ Search + Filter Container with Max Width */}
+      {/* Search + Filter */}
       <div className="flex flex-col sm:flex-row gap-3 mb-8 mx-auto w-full max-w-4xl">
         <input
           type="text"
@@ -90,9 +94,60 @@ const Datasets = () => {
         ))}
       </div>
 
-      {/* Preview Modal */}
+      {/* Dataset Preview Modal */}
       {selected && (
         <DatasetPreviewModal dataset={selected} onClose={() => setSelected(null)} />
+      )}
+
+      {/* ✅ Contact Info Modal */}
+      {showContactModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowContactModal(false)} // close when clicking background
+        >
+          <div
+            className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center relative animate-fadeIn"
+            onClick={(e) => e.stopPropagation()} // prevent close on content click
+          >
+            {/* ❌ Close Button (Top-right X) */}
+            <button
+              onClick={() => setShowContactModal(false)}
+              className="absolute top-1 right-1 text-green-600 hover:text-green-800 text-l font-bold bg-transparent border-none cursor-pointer transition-colors"
+            >
+              ✕
+            </button>
+
+            <h3 className="text-2xl font-semibold text-green-700 mb-4">
+              Contact Information
+            </h3>
+
+            {/* Email Row */}
+            <div className="flex items-center justify-between mb-4 border-b pb-2">
+              <p className="text-gray-700 truncate">
+                <strong>Email:</strong> {email}
+              </p>
+              <button
+                onClick={() => handleCopy(email, "email")}
+                className="ml-3 px-3 py-1 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded transition"
+              >
+                {copiedField === "email" ? "Copied!" : "Copy"}
+              </button>
+            </div>
+
+            {/* Phone Row */}
+            <div className="flex items-center justify-between mb-4 border-b pb-2">
+              <p className="text-gray-700 truncate">
+                <strong>Phone:</strong> {phone}
+              </p>
+              <button
+                onClick={() => handleCopy(phone, "phone")}
+                className="ml-3 px-3 py-1 text-sm bg-green-100 hover:bg-green-200 text-green-700 rounded transition"
+              >
+                {copiedField === "phone" ? "Copied!" : "Copy"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
