@@ -1,62 +1,62 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const images = [
-  "https://images.unsplash.com/photo-1503264116251-35a269479413?auto=format&fit=crop&w=1600&q=80",
-  "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1600&q=80",
-  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80",
-];
-
-const highlights = [
-  {
-    src: "https://images.unsplash.com/photo-1556761175-4b46a572b786?auto=format&fit=crop&w=800&q=80",
-    label: "FireCheck 2.0 Community Mapping",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=800&q=80",
-    label: "Research Collaboration Workshop",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1533750349088-cd871a92f312?auto=format&fit=crop&w=800&q=80",
-    label: "GIS Capacity Building",
-  },
-  {
-    src: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80",
-    label: "Andam Lapu-Lapu",
-  },
-];
-
 const Home = () => {
+  const [carousel, setCarousel] = useState([]);
+  const [highlights, setHighlights] = useState([]);
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
 
-  // Auto slide every 4 seconds
+  // 🔗 Replace this with your actual Apps Script JSON URL
+  const SHEET_JSON_URL =
+    "https://script.google.com/macros/s/AKfycbwgR7Ct4i0LfrdXBGPL0ECOrt6JGmVqn_qqADdWuv6hMYuEs7p9buhYVVX0MANiSlkuCQ/exec";
+
+  // 📥 Fetch JSON data (Carousel + Highlights)
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % images.length);
-    }, 4000);
-    return () => clearInterval(timer);
+    fetch(SHEET_JSON_URL)
+      .then((res) => res.json())
+      .then((data) => {
+        setCarousel(data.carousel || []);
+        setHighlights(data.highlights || []);
+      })
+      .catch((err) => console.error("Error loading content:", err));
   }, []);
+
+  // ⏱️ Auto slide every 4 seconds
+  useEffect(() => {
+    if (carousel.length === 0) return;
+    const timer = setInterval(
+      () => setCurrent((prev) => (prev + 1) % carousel.length),
+      4000
+    );
+    return () => clearInterval(timer);
+  }, [carousel]);
 
   return (
     <div className="w-full relative">
       {/* 🔹 Carousel Section */}
       <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] h-[400px] md:h-[550px] overflow-hidden group">
-        {images.map((img, index) => (
-          <img
-            key={index}
-            src={img}
-            alt={`slide-${index}`}
-            className={`absolute w-full h-full object-cover transition-opacity duration-1000 ${
-              index === current ? "opacity-100" : "opacity-0"
-            }`}
-          />
-        ))}
+        {carousel.length > 0 ? (
+          carousel.map((item, index) => (
+            <img
+              key={index}
+              src={item.src}
+              alt={item.label}
+              className={`absolute w-full h-full object-cover transition-opacity duration-1000 ${
+                index === current ? "opacity-100" : "opacity-0"
+              }`}
+            />
+          ))
+        ) : (
+          <div className="flex items-center justify-center h-full text-gray-500">
+            Loading carousel...
+          </div>
+        )}
 
-        {/* 🔹 Left Navigation */}
+        {/* 🔹 Navigation */}
         <div
           onClick={() =>
-            setCurrent((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+            setCurrent((prev) => (prev === 0 ? carousel.length - 1 : prev - 1))
           }
           className="absolute left-0 top-0 h-full w-[10%] z-20 cursor-pointer flex items-center justify-center bg-transparent hover:bg-black/20 transition"
           title="Previous Slide"
@@ -73,9 +73,8 @@ const Home = () => {
           </svg>
         </div>
 
-        {/* 🔹 Right Navigation */}
         <div
-          onClick={() => setCurrent((prev) => (prev + 1) % images.length)}
+          onClick={() => setCurrent((prev) => (prev + 1) % carousel.length)}
           className="absolute right-0 top-0 h-full w-[10%] z-20 cursor-pointer flex items-center justify-center bg-transparent hover:bg-black/20 transition"
           title="Next Slide"
         >
@@ -91,18 +90,19 @@ const Home = () => {
           </svg>
         </div>
 
-        {/* 🔹 Dots Navigation */}
-        <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 flex space-x-2 z-30">
-          {images.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrent(index)}
-              className={`w-3 h-3 rounded-full ${
-                current === index ? "bg-green-600" : "bg-gray-300"
-              }`}
-            ></button>
-          ))}
-        </div>
+        {carousel.length > 0 && (
+          <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 flex space-x-2 z-30">
+            {carousel.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrent(index)}
+                className={`w-3 h-3 rounded-full ${
+                  current === index ? "bg-green-600" : "bg-gray-300"
+                }`}
+              ></button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* 🔹 Welcome Section */}
@@ -128,18 +128,16 @@ const Home = () => {
           <a
             onClick={() => {
               const aboutSection = document.getElementById("about");
-              if (aboutSection) {
-                aboutSection.scrollIntoView({ behavior: "smooth" });
-              }
+              if (aboutSection) aboutSection.scrollIntoView({ behavior: "smooth" });
             }}
-            className="inline-block text-green-700 font-semibold text-lg cursor-pointer hover:text-green-800 transition"
+            className="text-green-700 font-semibold text-lg cursor-pointer hover:text-green-800 transition"
           >
             Learn more about CENVI ↓
           </a>
 
           <a
             onClick={() => navigate("/datasets")}
-            className="inline-block text-green-700 font-semibold text-lg cursor-pointer hover:text-green-800 transition"
+            className="text-green-700 font-semibold text-lg cursor-pointer hover:text-green-800 transition"
           >
             Explore Datasets →
           </a>
@@ -152,23 +150,32 @@ const Home = () => {
           Project Highlights
         </h3>
 
-        <div className="flex flex-wrap justify-center gap-8">
-          {highlights.map((item, i) => (
-            <div
-              key={i}
-              className="relative rounded-xl overflow-hidden shadow-md hover:shadow-lg transition group w-[500px]"
-            >
-              <img
-                src={item.src}
-                alt={item.label}
-                className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-center p-4">
-                <h4 className="text-lg font-semibold drop-shadow-md">{item.label}</h4>
+        {highlights.length > 0 ? (
+          <div className="flex flex-wrap justify-center gap-8">
+            {highlights.map((item, i) => (
+              <div
+                key={i}
+                className="relative rounded-xl overflow-hidden shadow-md hover:shadow-lg transition group w-[500px]"
+              >
+                <img
+                  src={item.src}
+                  alt={item.title}
+                  className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-center p-4">
+                  <h4 className="text-lg font-semibold drop-shadow-md">
+                    {item.title}
+                  </h4>
+                  {item.description && (
+                    <p className="text-sm opacity-90 mt-1">{item.description}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-gray-600">Loading highlights...</p>
+        )}
       </section>
 
       {/* 🔹 Interactive Map */}
