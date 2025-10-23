@@ -9,7 +9,7 @@ const Home = () => {
   const navigate = useNavigate();
 
   const SHEET_JSON_URL =
-    "https://script.google.com/macros/s/AKfycbwgR7Ct4i0LfrdXBGPL0ECOrt6JGmVqn_qqADdWuv6hMYuEs7p9buhYVVX0MANiSlkuCQ/exec";
+    "https://script.google.com/macros/s/AKfycbyYEz7bD0eW5W24rBkw7rJUywF5QFehnXX_sImKWMV8vArhlsZpZEPhuWa0Tks_49FOVQ/exec";
 
   useEffect(() => {
     const fetchData = () => {

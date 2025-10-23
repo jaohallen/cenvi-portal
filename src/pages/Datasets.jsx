@@ -15,15 +15,20 @@ const Datasets = () => {
   const phone = "+63 912 345 6789";
 
   useEffect(() => {
-    fetch("/data/datasets.json")
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("Loaded datasets:", data);
-        setDatasets(data);
-        setFiltered(data);
-      })
-      .catch((err) => console.error("Error loading datasets:", err));
-  }, []);
+  const SHEET_JSON_URL =
+    "https://script.google.com/macros/s/AKfycbyYEz7bD0eW5W24rBkw7rJUywF5QFehnXX_sImKWMV8vArhlsZpZEPhuWa0Tks_49FOVQ/exec";
+
+  fetch(SHEET_JSON_URL)
+    .then((res) => res.json())
+    .then((data) => {
+      const sheetData = data.datasets || [];
+      console.log("Loaded datasets from sheet:", sheetData);
+      setDatasets(sheetData);
+      setFiltered(sheetData);
+    })
+    .catch((err) => console.error("Error loading datasets from sheet:", err));
+}, []);
+
 
   useEffect(() => {
     let result = datasets;
