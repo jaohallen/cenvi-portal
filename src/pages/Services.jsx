@@ -44,7 +44,7 @@ const Services = () => {
         </span>
       </h2>
 
-      <p className="text-lg text-gray-700 leading-relaxed text-center max-w-4xl mx-auto mb-12">
+      <p className="text-lg text-gray-700 leading-relaxed mb-6 text-center">
         CENVI delivers interdisciplinary solutions that combine data science,
         GIS, and environmental research to address real-world sustainability
         and resilience challenges.
