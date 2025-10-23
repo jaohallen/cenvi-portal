@@ -111,7 +111,7 @@ const Datasets = () => {
       </h2>
 
       {/* Disclaimer */}
-      <div className="mb-8 text-center text-gray-700 text-lg max-w-3xl mx-auto leading-relaxed">
+      <div className="mb-8 text-center text-gray-700 text-lg mx-auto leading-relaxed">
         <p className="mb-2">
           The maps and datasets shown below are <strong>preview images only</strong> to
           illustrate the available geospatial products developed by CENVI.
