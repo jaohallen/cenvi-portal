@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Papa from "papaparse";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
+import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -28,7 +29,7 @@ const Dashboard = () => {
   const [fileName, setFileName] = useState("dataset.csv");
   const [selectedPoint, setSelectedPoint] = useState(null);
 
-  // File upload
+  // ✅ File upload
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -175,25 +176,53 @@ const Dashboard = () => {
 
   const createNumberIcon = (id) =>
     L.divIcon({
-      html: `<div style="background-color:#3a5a40;color:white;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold;border:2px solid white;box-shadow:0 0 3px rgba(0,0,0,0.4);">${id}</div>`,
+      html: `<div style="background-color:#3a5a40;color:white;border-radius:50%;width:34px;height:34px;font-size:15px;display:flex;align-items:center;justify-content:center;font-weight:bold;border:2px solid white;box-shadow:0 0 3px rgba(0,0,0,0.4);">${id}</div>`,
       className: "",
       iconSize: [30, 30],
     });
 
+    const createClusterCustomIcon = (cluster) => {
+    const count = cluster.getChildCount();
+
+    return L.divIcon({
+        html: `
+        <div style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: row;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #344e41;
+            border-radius: 12px;
+            padding: 6px 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            color: #3a5a40;
+            font-weight: bold;
+            font-size: 16px;
+        ">
+            <span style="font-size: 22px; font-weight: 900; margin-right: 4px;">+</span>
+            <span>${count}</span>
+        </div>
+        `,
+        className: "custom-cluster-plus",
+        iconSize: [50, 40],
+    });
+    };
+
   return (
     <div className="pt-20 p-6 relative">
+      {/* Header */}
       <h2 className="text-4xl md:text-5xl font-bold text-[#344e41] mt-10 mb-10 text-center tracking-tight relative">
         <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-[#3a5a40] after:mx-auto after:mt-2">
           Data Dashboard
         </span>
       </h2>
+
       <div className="mb-8 text-center text-gray-700 text-lg mx-auto leading-relaxed">
-        <p className="mb-2">
-          Upload your CSV file to visualize your data in a map.
-        </p>
+        <p>Upload your CSV file to visualize your data in a map.</p>
       </div>
 
-      {/* Upload */}
+      {/* File Upload */}
       <div className="flex justify-center items-center mb-10 z-10 relative">
         <label
           htmlFor="fileInput"
@@ -218,7 +247,7 @@ const Dashboard = () => {
               File Configuration
             </h3>
 
-            {/* Column selector */}
+            {/* Column Selector */}
             <div className="flex flex-wrap gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium mb-1">
@@ -237,6 +266,7 @@ const Dashboard = () => {
                   ))}
                 </select>
               </div>
+
               <div>
                 <label className="block text-sm font-medium mb-1">
                   Longitude Column
@@ -257,7 +287,9 @@ const Dashboard = () => {
             </div>
 
             {/* Select & Rename Columns */}
-            <h4 className="text-md font-semibold mb-2">Select & Rename Columns</h4>
+            <h4 className="text-md font-semibold mb-2">
+              Select & Rename Columns
+            </h4>
             <div className="border p-2 rounded-md max-h-[200px] overflow-y-auto mb-4">
               {headers.map((h) => (
                 <div key={h} className="flex items-center mb-2 space-x-2">
@@ -333,47 +365,125 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* ✅ Map + Point Info */}
+      {/* ✅ Map & Table */}
       {isConfigured && filteredData.length > 0 && (
         <>
           {/* Map */}
           <div className="flex justify-center mt-8 mb-6">
-            <div className="w-full max-w-6xl rounded-xl overflow-hidden shadow-md relative z-10">
+            <div className="w-full max-w-7xl rounded-xl overflow-hidden shadow-md relative z-10">
               <MapContainer
                 center={[
-                  Number(filteredData[0][latitudeCol]),
-                  Number(filteredData[0][longitudeCol]),
+                    Number(filteredData[0][latitudeCol]),
+                    Number(filteredData[0][longitudeCol]),
                 ]}
                 zoom={10}
-                scrollWheelZoom={true}
+                scrollWheelZoom
                 className="h-[520px] w-full"
-                style={{ zIndex: 1 }}
-              >
+                style={{ zIndex: 1, position: "relative" }}
+                >
                 <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 <FitBounds
-                  points={filteredData.map((row) => [
+                    points={filteredData.map((row) => [
                     Number(row[latitudeCol]),
                     Number(row[longitudeCol]),
-                  ])}
+                    ])}
                 />
-                {filteredData.map((row) => (
-                  <Marker
-                    key={row.__id}
-                    position={[
-                      Number(row[latitudeCol]),
-                      Number(row[longitudeCol]),
-                    ]}
-                    icon={createNumberIcon(row.__id)}
-                    eventHandlers={{ click: () => setSelectedPoint(row) }}
-                  />
-                ))}
-              </MapContainer>
+
+                <MarkerClusterGroup
+                    chunkedLoading
+                    iconCreateFunction={createClusterCustomIcon}
+                    spiderfyOnMaxZoom={true}
+                    showCoverageOnHover={false}
+                >
+                    {filteredData.map((row) => (
+                    <Marker
+                        key={row.__id}
+                        position={[
+                        Number(row[latitudeCol]),
+                        Number(row[longitudeCol]),
+                        ]}
+                        icon={createNumberIcon(row.__id)}
+                        eventHandlers={{ click: () => setSelectedPoint(row) }}
+                    />
+                    ))}
+                </MarkerClusterGroup>
+
+                {/* ✅ Floating Legend */}
+                <div
+                    className="leaflet-top leaflet-right"
+                    style={{
+                    position: "absolute",
+                    top: "10px",
+                    right: "10px",
+                    zIndex: 999,
+                    }}
+                >
+                    <div
+                        style={{
+                            backgroundColor: "rgba(255,255,255,0.50)",
+                            borderRadius: "8px",
+                            padding: "8px 12px",
+                            border: "1px solid #ccc",
+                            boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "6px",
+                            fontSize: "13px",
+                            color: "#333",
+                        }}
+                    >
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <div
+                        style={{
+                            backgroundColor: "#3a5a40",
+                            color: "white",
+                            borderRadius: "50%",
+                            width: "30px",
+                            height: "30px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontSize: "13px",
+                            fontWeight: "bold",
+                            border: "1.5px solid white",
+                            boxShadow: "0 0 3px rgba(0,0,0,0.3)",
+                        }}
+                        >
+                        1
+                        </div>
+                        <span>Individual Point</span>
+                    </div>
+
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: "rgba(255, 255, 255, 0.9)",
+                            border: "2px solid #344e41",
+                            borderRadius: "12px",
+                            padding: "1px 5px",
+                            color: "#3a5a40",
+                            fontWeight: "bold",
+                            fontSize: "13px",
+                            boxShadow: "0 2px 5px rgba(0,0,0,0.25)",
+                        }}
+                        >
+                        <span style={{ fontSize: "18px", marginRight: "3px" }}>+</span>5
+                        </div>
+                        <span>Clustered Points</span>
+                    </div>
+                    </div>
+                </div>
+                </MapContainer>
+
             </div>
           </div>
-
+        
           {/* Selected Point Info */}
           {selectedPoint && (
             <div className="flex justify-center">

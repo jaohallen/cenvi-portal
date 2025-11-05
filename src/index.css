@@ -48,3 +48,23 @@
 .animate-fadeIn {
   animation: fadeIn 0.4s ease-out;
 }
+
+.animated-cluster {
+  transform: scale(1);
+  transition: transform 0.25s ease;
+}
+.animated-cluster:hover {
+  transform: scale(1.2);
+  z-index: 1000;
+}
+
+.custom-cluster-icon {
+  transform: scale(1);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.custom-cluster-icon:hover {
+  transform: scale(1.15);
+  z-index: 999;
+  box-shadow: 0 0 12px rgba(88, 129, 87, 0.8);
+}
