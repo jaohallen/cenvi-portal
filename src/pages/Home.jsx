@@ -182,15 +182,72 @@ const Home = () => {
         )}
       </section>
 
-      <section className="w-full px-8 lg:px-24 py-10">
+      <section className="w-full px-8 lg:px-24 py-20 bg-gray-50">
         <h3 className="text-3xl font-semibold text-[#3a5a40] mb-8 text-center">
-          Interactive Web Map
+          CENVI Portal Features
         </h3>
-        <p className="text-lg text-gray-700 leading-relaxed mb-6 text-center">
-          Explore geospatial insights through our interactive map — showcasing datasets,
-          research outputs, and field data for various environmental projects.
+        <p className="text-lg text-gray-700 leading-relaxed mb-10 text-center max-w-3xl mx-auto">
+          Explore geospatial insights through our interactive web map and visualization dashboard.
         </p>
-        <div className="relative w-full">
+
+        {/* Two-column feature section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
+          {/* Left: Interactive Map Feature */}
+          <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition cursor-pointer">
+            <div className="w-full aspect-video overflow-hidden">
+              <img
+                src="/site-images/portal_webmap.png"
+                alt="Interactive AGOL Web Map"
+                loading="lazy"
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+            <div className="p-6 text-center">
+              <h4 className="text-xl font-semibold text-[#3a5a40] mb-2">
+                ArcGIS Online Web Map
+              </h4>
+              <p className="text-gray-700 text-sm mb-4">
+                Access the CENVI interactive map powered by ArcGIS Online, integrating hazard layers, 
+                infrastructure datasets, and geospatial analyses.
+              </p>
+              <button
+                onClick={() => window.open("https://upcenvi.maps.arcgis.com", "_blank")}
+                className="px-4 py-2 bg-[#3a5a40] text-white rounded-lg hover:bg-[#588157] transition"
+              >
+                Open Map →
+              </button>
+            </div>
+          </div>
+
+          {/* Right: Dashboard Feature */}
+          <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition cursor-pointer">
+            <div className="w-full aspect-video overflow-hidden">
+              <img
+                src="/site-images/portal_dataset_dashboard.png"
+                alt="Dashboard for Georeferenced Datasets"
+                loading="lazy"
+                className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+            <div className="p-6 text-center">
+              <h4 className="text-xl font-semibold text-[#3a5a40] mb-2">
+                Dataset Dashboard
+              </h4>
+              <p className="text-gray-700 text-sm mb-4">
+                Visualize and analyze your georeferenced datasets and view charts, maps, and key indicators for immediate summary.
+              </p>
+              <button
+                onClick={() => window.open("/dashboard", "_blank")}
+                className="px-4 py-2 bg-[#3a5a40] text-white rounded-lg hover:bg-[#588157] transition"
+              >
+                View Dashboard →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Embedded ArcGIS Map 
+        <div className="rounded-xl overflow-hidden shadow-md">
           <arcgis-embedded-map
             style={{
               width: "100%",
@@ -205,8 +262,10 @@ const Home = () => {
             scale="577790.554289"
             portal-url="https://upcenvi.maps.arcgis.com"
           ></arcgis-embedded-map>
-        </div>
+        </div>*/}
+
       </section>
+
       
       {selectedImage && (
         <div

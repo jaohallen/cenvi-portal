@@ -68,3 +68,8 @@
   z-index: 999;
   box-shadow: 0 0 12px rgba(88, 129, 87, 0.8);
 }
+
+img.loaded {
+  opacity: 1;
+  transition: opacity 0.8s ease-in-out;
+}
