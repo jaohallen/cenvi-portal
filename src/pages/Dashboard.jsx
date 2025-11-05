@@ -564,7 +564,32 @@ const Dashboard = () => {
                     <ResponsiveContainer width="100%" height={300}>
                       <BarChart data={summary.slice(0, 15)}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        
+                        <XAxis
+                          dataKey="value"
+                          interval={0}
+                          angle={0}
+                          textAnchor="middle"
+                          height={70}
+                          tick={({ x, y, payload }) => {
+                            const text = payload.value;
+                            const tooLong = text.length > 20;
+                            return (
+                              <text
+                                x={x}
+                                y={y + 10}
+                                textAnchor="middle"
+                                transform={
+                                  tooLong
+                                    ? `rotate(-90 ${x},${y + 10}) translate(0,5)`
+                                    : undefined
+                                }
+                                fontSize={12}
+                              >
+                                {tooLong ? text.slice(0, 18) + "…" : text}
+                              </text>
+                            );
+                          }}
+                        />
                         <YAxis />
                         <Tooltip />
                         <Bar dataKey="frequency">
