@@ -9,6 +9,7 @@ import Collaborators from "./pages/Collaborators";
 import Contact from "./pages/Contact";
 import WebMap from "./pages/WebMap";
 import Datasets from "./pages/Datasets";
+import Dashboard from "./pages/Dashboard";
 
 
 import "./index.css";
@@ -35,7 +36,7 @@ function App() {
             />
 
             {/* Separate Web Map page */}
-            <Route path="/webmap" element={<WebMap />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/datasets" element={<Datasets />} />
           </Routes>
         </main>
