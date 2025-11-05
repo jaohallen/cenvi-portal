@@ -4,6 +4,17 @@ import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+
 
 const FitBounds = ({ points }) => {
   const map = useMap();
@@ -28,8 +39,8 @@ const Dashboard = () => {
   const [isConfigured, setIsConfigured] = useState(false);
   const [fileName, setFileName] = useState("dataset.csv");
   const [selectedPoint, setSelectedPoint] = useState(null);
+  const [selectedSummaryCols, setSelectedSummaryCols] = useState([]);
 
-  // ✅ File upload
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -208,6 +219,27 @@ const Dashboard = () => {
         iconSize: [50, 40],
     });
     };
+  
+  const getSummaryData = (col) => {
+    const freq = {};
+    filteredData.forEach((row) => {
+      const val = row[col] || "—";
+      freq[val] = (freq[val] || 0) + 1;
+    });
+    return Object.entries(freq).map(([value, count]) => ({
+      value,
+      frequency: count,
+      percentage: ((count / filteredData.length) * 100).toFixed(2),
+    }));
+  };
+
+  const toggleSummaryColumn = (col) => {
+    setSelectedSummaryCols((prev) =>
+      prev.includes(col)
+        ? prev.filter((c) => c !== col)
+        : [...prev, col]
+    );
+  };
 
   return (
     <div className="pt-20 p-6 relative">
@@ -368,6 +400,8 @@ const Dashboard = () => {
       {/* ✅ Map & Table */}
       {isConfigured && filteredData.length > 0 && (
         <>
+        
+      
           {/* Map */}
           <div className="flex justify-center mt-8 mb-6">
             <div className="w-full max-w-7xl rounded-xl overflow-hidden shadow-md relative z-10">
@@ -435,6 +469,7 @@ const Dashboard = () => {
                             color: "#333",
                         }}
                     >
+                    Legend
                     <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                         <div
                         style={{
@@ -483,12 +518,100 @@ const Dashboard = () => {
 
             </div>
           </div>
-        
-          {/* Selected Point Info */}
-          {selectedPoint && (
-            <div className="flex justify-center">
-              <div className="w-full max-w-5xl border rounded-xl p-5 mb-6 bg-white shadow">
-                <h3 className="text-lg font-bold text-[#3a5a40] mb-3">
+
+          {/* Summary Dashboard */}
+          <div className="w-full max-w-7xl mx-auto mt-10 mb-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* SUMMARY DASHBOARD */}
+            <div className="bg-white rounded-xl shadow-md p-6 border">
+              <h3 className="text-2xl font-bold text-[#344e41] mb-6 text-center">
+                Summary Dashboard
+              </h3>
+
+              {/* Column Selector (Dropdown) */}
+              <div className="flex justify-center mb-6">
+                <select
+                  value={selectedSummaryCols[0] || ""}
+                  onChange={(e) => setSelectedSummaryCols([e.target.value])}
+                  className="border rounded-md px-4 py-2 text-sm min-w-[200px] md:min-w-[250px] lg:min-w-[300px] max-w-full"
+                  style={{
+                    width: "auto",
+                    maxWidth: "100%",
+                  }}
+                >
+                  <option value="">Select Column to Summarize</option>
+                  {columnsToDisplay
+                    .filter((h) => h !== "__id" && h !== latitudeCol && h !== longitudeCol)
+                    .map((col) => (
+                      <option key={col} value={col}>
+                        {getRenamedHeader(col)}
+                      </option>
+                    ))}
+                </select>
+              </div>
+
+
+              {/* Chart + Frequency Table */}
+              {selectedSummaryCols[0] && (() => {
+                const col = selectedSummaryCols[0];
+                const summary = getSummaryData(col).sort((a, b) => b.frequency - a.frequency);
+                const rotateLabels = summary.length > 12;
+
+                return (
+                  <>
+                    <h4 className="text-lg font-semibold text-[#3a5a40] mb-4 text-center">
+                      {getRenamedHeader(col)}
+                    </h4>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={summary.slice(0, 15)}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        
+                        <YAxis />
+                        <Tooltip />
+                        <Bar dataKey="frequency">
+                          {summary.slice(0, 15).map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={`hsl(${(index * 45) % 360}, 70%, 55%)`}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+
+
+                    <div className="overflow-x-auto mt-6">
+                      <table className="min-w-full border border-gray-300 text-sm">
+                        <thead className="bg-[#344e41] text-white">
+                          <tr>
+                            <th className="border px-3 py-2 text-left">Value</th>
+                            <th className="border px-3 py-2 text-center">Frequency</th>
+                            <th className="border px-3 py-2 text-center">Percentage</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {summary.map((item) => (
+                            <tr key={item.value}>
+                              <td className="border px-3 py-2">{item.value}</td>
+                              <td className="border px-3 py-2 text-center">
+                                {item.frequency}
+                              </td>
+                              <td className="border px-3 py-2 text-center">
+                                {item.percentage}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* SELECTED POINT INFO */}
+            {selectedPoint && (
+              <div className="bg-white rounded-xl shadow-md p-6 border h-fit">
+                <h3 className="text-lg font-bold text-[#3a5a40] mb-3 text-center">
                   Selected Point – ID {selectedPoint.__id}
                 </h3>
                 <div className="overflow-x-auto">
@@ -498,7 +621,7 @@ const Dashboard = () => {
                         .filter((c) => c !== "__id")
                         .map((h) => (
                           <tr key={h}>
-                            <td className="border px-3 py-1 font-semibold bg-gray-50 w-1/4">
+                            <td className="border px-3 py-1 font-semibold bg-gray-50 w-1/3">
                               {getRenamedHeader(h)}
                             </td>
                             <td className="border px-3 py-1 break-words max-w-[400px]">
@@ -510,8 +633,9 @@ const Dashboard = () => {
                   </table>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
 
           {/* Left-aligned Button */}
           <div className="flex justify-center mb-8">
