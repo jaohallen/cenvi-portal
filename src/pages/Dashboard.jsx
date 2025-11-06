@@ -15,7 +15,6 @@ import {
   Cell,
 } from "recharts";
 
-
 const FitBounds = ({ points }) => {
   const map = useMap();
   useEffect(() => {
@@ -40,6 +39,7 @@ const Dashboard = () => {
   const [fileName, setFileName] = useState("dataset.csv");
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [selectedSummaryCols, setSelectedSummaryCols] = useState([]);
+  const [showAll, setShowAll] = useState(false);
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -274,21 +274,19 @@ const Dashboard = () => {
       {/* ✅ File Configuration Modal */}
       {showConfigModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
-          <div className="bg-white rounded-lg p-6 w-[90%] md:w-[700px] shadow-lg max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-8 w-[95%] md:w-[900px] lg:w-[1100px] shadow-lg max-h-[90vh] overflow-y-auto">
             <h3 className="text-xl font-semibold text-[#3a5a40] mb-4 text-center">
               File Configuration
             </h3>
 
             {/* Column Selector */}
-            <div className="flex flex-wrap gap-4 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Latitude Column
-                </label>
+                <label className="block text-sm font-medium mb-1">Latitude Column</label>
                 <select
                   value={latitudeCol}
                   onChange={(e) => setLatitudeCol(e.target.value)}
-                  className="border p-2 rounded-md w-40"
+                  className="border p-2 rounded-md w-full"
                 >
                   <option value="">Select</option>
                   {headers.map((h) => (
@@ -300,13 +298,11 @@ const Dashboard = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">
-                  Longitude Column
-                </label>
+                <label className="block text-sm font-medium mb-1">Longitude Column</label>
                 <select
                   value={longitudeCol}
                   onChange={(e) => setLongitudeCol(e.target.value)}
-                  className="border p-2 rounded-md w-40"
+                  className="border p-2 rounded-md w-full"
                 >
                   <option value="">Select</option>
                   {headers.map((h) => (
@@ -317,66 +313,42 @@ const Dashboard = () => {
                 </select>
               </div>
             </div>
+
 
             {/* Select & Rename Columns */}
             <h4 className="text-md font-semibold mb-2">
               Select & Rename Columns
             </h4>
-            <div className="border p-2 rounded-md max-h-[200px] overflow-y-auto mb-4">
+            <div className="border p-3 rounded-md max-h-[250px] overflow-y-auto mb-4 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
               {headers.map((h) => (
-                <div key={h} className="flex items-center mb-2 space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={columnsToDisplay.includes(h)}
-                    onChange={() => handleToggleColumn(h)}
-                  />
-                  <span className="w-32 text-sm">{getRenamedHeader(h)}</span>
+                <div key={h} className="flex items-center justify-between gap-2 w-full">
+                  {/* Checkbox + Label */}
+                  <div className="flex items-center gap-2 w-1/2 min-w-0">
+                    <input
+                      type="checkbox"
+                      checked={columnsToDisplay.includes(h)}
+                      onChange={() => handleToggleColumn(h)}
+                      className="flex-shrink-0"
+                    />
+                    <span
+                      className="text-sm truncate"
+                      title={getRenamedHeader(h)}
+                    >
+                      {getRenamedHeader(h)}
+                    </span>
+                  </div>
+
+                  {/* Rename Input */}
                   <input
                     type="text"
                     placeholder="Rename"
                     value={renamedColumns[h] || ""}
                     onChange={(e) => handleRenameColumn(h, e.target.value)}
-                    className="border p-1 rounded-md text-sm w-40"
+                    className="border p-1 rounded-md text-sm w-1/2"
                   />
                 </div>
               ))}
             </div>
-
-            {/* Preview Table */}
-            {data.length > 0 && (
-              <div className="border rounded-md p-2 bg-gray-50 mb-4">
-                <h5 className="font-semibold mb-2 text-sm text-[#3a5a40]">
-                  Preview (first 5 rows)
-                </h5>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full border border-gray-300 text-xs">
-                    <thead className="bg-gray-100">
-                      <tr>
-                        {headers.map((h) => (
-                          <th key={h} className="border px-2 py-1 text-left">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.slice(0, 5).map((row, i) => (
-                        <tr key={i}>
-                          {headers.map((h) => (
-                            <td
-                              key={h}
-                              className="border px-2 py-1 break-words max-w-[150px]"
-                            >
-                              {row[h]?.toString() || ""}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
 
             {/* Buttons */}
             <div className="flex justify-end space-x-4">
@@ -395,13 +367,31 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      )}
+      )}  
 
       {/* ✅ Map & Table */}
       {isConfigured && filteredData.length > 0 && (
         <>
-        
-      
+          {/* Uploaded File Info — One Liner, Responsive */}
+          <div className="w-full max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 text-sm sm:text-base mt-8 mb-4 px-4 leading-snug">
+            <div className="flex flex-wrap items-center gap-2 text-[#344e41] font-medium">
+              <span className="truncate max-w-[100%] sm:max-w-[60%] md:max-w-[70%]">
+                Uploaded file:
+              </span>
+              <button
+                onClick={handleOpenFullTable}
+                className="text-[#3a5a40] underline hover:text-[#588157] transition break-words text-left w-full sm:w-auto"
+              >
+                {fileName}
+              </button>
+            </div>
+
+            {filteredData.length > 0 && (
+              <span className="text-gray-600 whitespace-nowrap">
+                {filteredData.length} record{filteredData.length !== 1 ? "s" : ""} loaded
+              </span>
+            )}
+          </div>      
           {/* Map */}
           <div className="flex justify-center mt-8 mb-6">
             <div className="w-full max-w-7xl rounded-xl overflow-hidden shadow-md relative z-10">
@@ -487,7 +477,7 @@ const Dashboard = () => {
                             boxShadow: "0 0 3px rgba(0,0,0,0.3)",
                         }}
                         >
-                        1
+                    
                         </div>
                         <span>Individual Point</span>
                     </div>
@@ -501,14 +491,14 @@ const Dashboard = () => {
                             background: "rgba(255, 255, 255, 0.9)",
                             border: "2px solid #344e41",
                             borderRadius: "12px",
-                            padding: "1px 5px",
+                            padding: "1px 8px",
                             color: "#3a5a40",
                             fontWeight: "bold",
                             fontSize: "13px",
                             boxShadow: "0 2px 5px rgba(0,0,0,0.25)",
                         }}
                         >
-                        <span style={{ fontSize: "18px", marginRight: "3px" }}>+</span>5
+                        <span style={{ fontSize: "15px"}}>+</span>
                         </div>
                         <span>Clustered Points</span>
                     </div>
@@ -519,11 +509,12 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Summary Dashboard */}
+          {/* Summary Dashboard + Selected Point Info side-by-side */}
           <div className="w-full max-w-7xl mx-auto mt-10 mb-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
             {/* SUMMARY DASHBOARD */}
-            <div className="bg-white rounded-xl shadow-md p-6 border">
-              <h3 className="text-2xl font-bold text-[#344e41] mb-6 text-center">
+            <div className="bg-white rounded-xl shadow-md p-6 border flex flex-col">
+              <h3 className="text-lg font-bold text-[#344e41] mb-6 text-center">
                 Summary Dashboard
               </h3>
 
@@ -531,7 +522,10 @@ const Dashboard = () => {
               <div className="flex justify-center mb-6">
                 <select
                   value={selectedSummaryCols[0] || ""}
-                  onChange={(e) => setSelectedSummaryCols([e.target.value])}
+                  onChange={(e) => {
+                    setSelectedSummaryCols([e.target.value]);
+                    setShowAll(false); // reset when switching columns
+                  }}
                   className="border rounded-md px-4 py-2 text-sm min-w-[200px] md:min-w-[250px] lg:min-w-[300px] max-w-full"
                   style={{
                     width: "auto",
@@ -549,51 +543,27 @@ const Dashboard = () => {
                 </select>
               </div>
 
-
               {/* Chart + Frequency Table */}
               {selectedSummaryCols[0] && (() => {
                 const col = selectedSummaryCols[0];
                 const summary = getSummaryData(col).sort((a, b) => b.frequency - a.frequency);
-                const rotateLabels = summary.length > 12;
+                const visibleData = showAll ? summary : summary.slice(0, 15);
 
                 return (
                   <>
                     <h4 className="text-lg font-semibold text-[#3a5a40] mb-4 text-center">
                       {getRenamedHeader(col)}
                     </h4>
+
+                    {/* Bar Chart without X-Axis labels */}
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={summary.slice(0, 15)}>
+                      <BarChart data={visibleData}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis
-                          dataKey="value"
-                          interval={0}
-                          angle={0}
-                          textAnchor="middle"
-                          height={70}
-                          tick={({ x, y, payload }) => {
-                            const text = payload.value;
-                            const tooLong = text.length > 20;
-                            return (
-                              <text
-                                x={x}
-                                y={y + 10}
-                                textAnchor="middle"
-                                transform={
-                                  tooLong
-                                    ? `rotate(-90 ${x},${y + 10}) translate(0,5)`
-                                    : undefined
-                                }
-                                fontSize={12}
-                              >
-                                {tooLong ? text.slice(0, 18) + "…" : text}
-                              </text>
-                            );
-                          }}
-                        />
+                        <XAxis dataKey="value" hide />
                         <YAxis />
                         <Tooltip />
                         <Bar dataKey="frequency">
-                          {summary.slice(0, 15).map((entry, index) => (
+                          {visibleData.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
                               fill={`hsl(${(index * 45) % 360}, 70%, 55%)`}
@@ -603,7 +573,7 @@ const Dashboard = () => {
                       </BarChart>
                     </ResponsiveContainer>
 
-
+                    {/* Summary Table with Color Legend */}
                     <div className="overflow-x-auto mt-6">
                       <table className="min-w-full border border-gray-300 text-sm">
                         <thead className="bg-[#344e41] text-white">
@@ -614,31 +584,52 @@ const Dashboard = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {summary.map((item) => (
+                          {visibleData.map((item, index) => (
                             <tr key={item.value}>
-                              <td className="border px-3 py-2">{item.value}</td>
-                              <td className="border px-3 py-2 text-center">
-                                {item.frequency}
+                              <td className="border px-3 py-2 flex items-center gap-2">
+                                <div
+                                  className="w-4 h-4 rounded-sm flex-shrink-0"
+                                  style={{
+                                    backgroundColor: `hsl(${(index * 45) % 360}, 70%, 55%)`,
+                                  }}
+                                ></div>
+                                <span className="truncate" title={item.value}>
+                                  {item.value}
+                                </span>
                               </td>
-                              <td className="border px-3 py-2 text-center">
-                                {item.percentage}%
-                              </td>
+                              <td className="border px-3 py-2 text-center">{item.frequency}</td>
+                              <td className="border px-3 py-2 text-center">{item.percentage}%</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
+
+                    {/* Show All / Show Less Button */}
+                    {summary.length > 15 && (
+                      <div className="flex justify-center mt-4">
+                        <button
+                          onClick={() => setShowAll((prev) => !prev)}
+                          className="px-4 py-2 bg-[#3a5a40] text-white rounded-md hover:bg-[#588157] transition"
+                        >
+                          {showAll ? "Show Less" : `Show All (${summary.length})`}
+                        </button>
+                      </div>
+                    )}
                   </>
                 );
               })()}
             </div>
 
             {/* SELECTED POINT INFO */}
-            {selectedPoint && (
-              <div className="bg-white rounded-xl shadow-md p-6 border h-fit">
-                <h3 className="text-lg font-bold text-[#3a5a40] mb-3 text-center">
-                  Selected Point – ID {selectedPoint.__id}
-                </h3>
+            <div className="bg-white rounded-xl shadow-md p-6 border flex flex-col h-fit min-h-[250px]">
+              <h3 className="text-lg font-bold text-[#3a5a40] mb-3 text-center">
+                {selectedPoint
+                  ? `Selected Point – ID ${selectedPoint.__id}`
+                  : "Selected Point"}
+              </h3>
+
+              {selectedPoint ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full border border-gray-300 text-sm table-fixed">
                     <tbody>
@@ -657,22 +648,16 @@ const Dashboard = () => {
                     </tbody>
                   </table>
                 </div>
-              </div>
-            )}
-          </div>
-
-
-          {/* Left-aligned Button */}
-          <div className="flex justify-center mb-8">
-            <div className="w-full max-w-5xl flex justify-start">
-              <button
-                onClick={handleOpenFullTable}
-                className="px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3a5a40]"
-              >
-                View Full Table
-              </button>
+              ) : (
+                <p className="text-gray-500 text-center mt-8 italic">
+                  Click a point on the map to view details here.
+                </p>
+              )}
             </div>
           </div>
+
+
+
         </>
       )}
     </div>

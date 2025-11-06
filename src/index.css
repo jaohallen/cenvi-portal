@@ -73,3 +73,10 @@ img.loaded {
   opacity: 1;
   transition: opacity 0.8s ease-in-out;
 }
+
+select, option {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
