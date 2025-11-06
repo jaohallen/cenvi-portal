@@ -26,6 +26,31 @@ const FitBounds = ({ points }) => {
   return null;
 };
 
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    const { value, frequency, percentage } = payload[0].payload;
+    return (
+      <div
+        style={{
+          backgroundColor: "rgba(255,255,255,0.95)",
+          border: "1px solid #ccc",
+          padding: "8px 12px",
+          borderRadius: "8px",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+        }}
+      >
+        <p style={{ margin: 0, fontWeight: "bold", color: "#344e41" }}>
+          {value}
+        </p>
+        <p style={{ margin: 0, fontSize: "13px", color: "#555" }}>
+          Frequency: {frequency}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const Dashboard = () => {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -555,13 +580,19 @@ const Dashboard = () => {
                       {getRenamedHeader(col)}
                     </h4>
 
-                    {/* Bar Chart without X-Axis labels */}
                     <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={visibleData}>
+                      <BarChart data={visibleData} margin={{ top: 10, right: 20, bottom: 10 }}>
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="value" hide />
-                        <YAxis />
-                        <Tooltip />
+                        <XAxis
+                          dataKey="value"
+                          hide
+                          tick={{ fontSize: 12, fill: "#333" }}
+                        />
+                        <YAxis
+                          domain={[0, "dataMax + 5"]}
+                          tick={{ fontSize: 12, fill: "#333" }}
+                        />
+                        <Tooltip content={<CustomTooltip />} />
                         <Bar dataKey="frequency">
                           {visibleData.map((entry, index) => (
                             <Cell
