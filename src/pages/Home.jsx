@@ -40,6 +40,10 @@ const Home = () => {
 
   const [selectedImage, setSelectedImage] = useState(null);
 
+  const handleNavigateToDashboard = () => {
+    navigate("/dashboard"); // same as navbar click
+  };
+
   return (
     <div className="w-full relative">
       <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] h-[400px] md:h-[550px] overflow-hidden group">
@@ -237,7 +241,7 @@ const Home = () => {
                 Visualize and analyze your georeferenced datasets and view charts, maps, and key indicators for immediate summary.
               </p>
               <button
-                onClick={() => window.open("/dashboard", "_blank")}
+                onClick={handleNavigateToDashboard}
                 className="px-4 py-2 bg-[#3a5a40] text-white rounded-lg hover:bg-[#588157] transition"
               >
                 View Dashboard →
