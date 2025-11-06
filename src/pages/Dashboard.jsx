@@ -126,7 +126,11 @@ const Dashboard = () => {
     setRenamedColumns((prev) => ({ ...prev, [col]: newName }));
   };
 
-  const getRenamedHeader = (col) => renamedColumns[col] || col;
+  const getRenamedHeader = (col) => {
+    if (col === "__id") return "ID";
+    return renamedColumns[col] || col;
+  };
+
 
   const handleConfirmConfiguration = () => {
     if (!latitudeCol || !longitudeCol) {
@@ -771,9 +775,7 @@ const Dashboard = () => {
                                   <table className="min-w-full border-collapse border border-gray-300 text-sm">
                                     <thead className="bg-[#3a5a40] text-white sticky top-0 z-10">
                                       <tr>
-                                        {columnsToDisplay
-                                          .filter((h) => h !== "__id")
-                                          .map((col) => (
+                                        {columnsToDisplay.map((col) => (
                                             <th
                                               key={col}
                                               className="border px-3 py-2 text-left whitespace-normal break-words sticky top-0 bg-[#3a5a40] text-white align-top"
@@ -797,9 +799,7 @@ const Dashboard = () => {
                                           key={i}
                                           className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
                                         >
-                                          {columnsToDisplay
-                                            .filter((h) => h !== "__id")
-                                            .map((col) => (
+                                          {columnsToDisplay.map((col) => (
                                               <td
                                                 key={col}
                                                 className="border px-3 py-1 align-top break-words whitespace-normal"
