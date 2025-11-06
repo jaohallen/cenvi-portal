@@ -65,6 +65,20 @@ const Dashboard = () => {
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [selectedSummaryCols, setSelectedSummaryCols] = useState([]);
   const [showAll, setShowAll] = useState(false);
+  const [selectedValue, setSelectedValue] = useState(null);
+  const [valueRows, setValueRows] = useState([]);
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setSelectedValue(null);
+        setValueRows([]);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -120,6 +134,18 @@ const Dashboard = () => {
       return;
     }
 
+    // ✅ Detect numeric columns based on available data
+    const numericColumns = new Set();
+    headers.forEach((col) => {
+      const firstNonEmpty = data.find(
+        (r) => r[col] !== null && r[col] !== undefined && r[col] !== ""
+      );
+      if (firstNonEmpty && !isNaN(Number(firstNonEmpty[col]))) {
+        numericColumns.add(col);
+      }
+    });
+
+    // ✅ Clean and normalize all rows
     const valid = data
       .filter(
         (row) =>
@@ -128,7 +154,27 @@ const Dashboard = () => {
           !isNaN(Number(row[latitudeCol])) &&
           !isNaN(Number(row[longitudeCol]))
       )
-      .map((row, index) => ({ __id: index + 1, ...row }));
+      .map((row, index) => {
+        const cleanedRow = { __id: index + 1 };
+
+        Object.keys(row).forEach((key) => {
+          let value = row[key];
+
+          // Convert missing/empty values appropriately
+          if (value === null || value === undefined || value === "") {
+            value = numericColumns.has(key) ? 0 : "null";
+          }
+
+          // Ensure numeric consistency
+          if (numericColumns.has(key)) {
+            value = isNaN(Number(value)) ? 0 : Number(value);
+          }
+
+          cleanedRow[key] = value;
+        });
+
+        return cleanedRow;
+      });
 
     if (valid.length === 0) {
       alert("No valid rows with coordinates found.");
@@ -593,11 +639,31 @@ const Dashboard = () => {
                           tick={{ fontSize: 12, fill: "#333" }}
                         />
                         <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="frequency">
+                        <Bar
+                          dataKey="frequency"
+                          onClick={(data) => {
+                            const clickedValue = data.payload.value;
+                            setSelectedValue(clickedValue);
+
+                            const col = selectedSummaryCols[0];
+
+                            const rows = filteredData.filter((r) => {
+                              const cell = r[col];
+                              const isNumeric = !isNaN(Number(clickedValue)) && !isNaN(Number(cell));
+                              return isNumeric
+                                ? Number(cell) === Number(clickedValue)
+                                : String(cell) === String(clickedValue);
+                            });
+
+                            setValueRows(rows);
+                          }}
+                        >
+
                           {visibleData.map((entry, index) => (
                             <Cell
                               key={`cell-${index}`}
                               fill={`hsl(${(index * 45) % 360}, 70%, 55%)`}
+                              style={{ cursor: "pointer" }}
                             />
                           ))}
                         </Bar>
@@ -616,7 +682,24 @@ const Dashboard = () => {
                         </thead>
                         <tbody>
                           {visibleData.map((item, index) => (
-                            <tr key={item.value}>
+                            <tr
+                              key={item.value}
+                              onClick={() => {
+                                setSelectedValue(item.value);
+                                const col = selectedSummaryCols[0];
+
+                                const rows = filteredData.filter((r) => {
+                                  const cell = r[col];
+                                  const isNumeric = !isNaN(Number(item.value)) && !isNaN(Number(cell));
+                                  return isNumeric
+                                    ? Number(cell) === Number(item.value)
+                                    : String(cell) === String(item.value);
+                                });
+
+                                setValueRows(rows);
+                              }}
+                              className="cursor-pointer hover:bg-gray-100 transition"
+                            >
                               <td className="border px-3 py-2 flex items-center gap-2">
                                 <div
                                   className="w-4 h-4 rounded-sm flex-shrink-0"
@@ -647,6 +730,104 @@ const Dashboard = () => {
                         </button>
                       </div>
                     )}
+                    
+                    {selectedValue && (
+                      <div
+                        className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50"
+                      >
+                        <div
+                          className="bg-white rounded-lg shadow-2xl w-[90%] max-w-[1200px] max-h-[90vh] flex flex-col"
+                        >
+                          {/* Header */}
+                          <div className="flex justify-between items-center px-6 py-4 border-b bg-white sticky top-0 z-10">
+                            <h4 className="text-lg font-bold text-[#344e41]">
+                              Rows containing: “{selectedValue}”
+                              <span className="text-gray-600 font-normal">
+                                {" "}
+                                ({valueRows.length} {valueRows.length === 1 ? "result" : "results"})
+                              </span>
+                            </h4>
+
+                            {/* Footer */}
+                            <div className="px-2 py-3 text-center">
+                              <button
+                                onClick={() => {
+                                  setSelectedValue(null);
+                                  setValueRows([]);
+                                }}
+                                className="px-4 py-2 text-white bg-[#3a5a40] rounded-md hover:bg-[#588157] transition"
+                              >
+                                Close
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Scrollable Table Section */}
+                          <div className="flex-grow overflow-y-auto px-6 py-4">
+                            {valueRows.length > 0 ? (
+                              <div className="overflow-x-auto border rounded-lg shadow-sm">
+                                {/* ✅ Scrollable table body container */}
+                                <div className="max-h-[60vh] overflow-y-auto">
+                                  <table className="min-w-full border-collapse border border-gray-300 text-sm">
+                                    <thead className="bg-[#3a5a40] text-white sticky top-0 z-10">
+                                      <tr>
+                                        {columnsToDisplay
+                                          .filter((h) => h !== "__id")
+                                          .map((col) => (
+                                            <th
+                                              key={col}
+                                              className="border px-3 py-2 text-left whitespace-normal break-words sticky top-0 bg-[#3a5a40] text-white align-top"
+                                              style={{
+                                                zIndex: 20,
+                                                lineHeight: "1.2em",
+                                                maxWidth: "220px", // optional — prevents very wide headers
+                                                whiteSpace: "normal", // allows multi-line
+                                              }}
+                                            >
+                                              {getRenamedHeader(col)}
+                                            </th>
+
+                                          ))}
+                                      </tr>
+                                    </thead>
+
+                                    <tbody>
+                                      {valueRows.map((row, i) => (
+                                        <tr
+                                          key={i}
+                                          className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                                        >
+                                          {columnsToDisplay
+                                            .filter((h) => h !== "__id")
+                                            .map((col) => (
+                                              <td
+                                                key={col}
+                                                className="border px-3 py-1 align-top break-words whitespace-normal"
+                                                style={{
+                                                  maxWidth: "300px",
+                                                  verticalAlign: "top",
+                                                }}
+                                              >
+                                                {row[col]?.toString() || "—"}
+                                              </td>
+                                            ))}
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+
+                            ) : (
+                              <p className="text-center text-gray-600 italic">
+                                No matching rows found for “{selectedValue}”.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                   </>
                 );
               })()}
