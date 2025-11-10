@@ -80,3 +80,14 @@ select, option {
   overflow-wrap: anywhere;
   max-width: 100%;
 }
+
+.modal-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: #b3b3b3;
+  border-radius: 4px;
+}
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #888;
+}

@@ -11,7 +11,6 @@ import WebMap from "./pages/WebMap";
 import Datasets from "./pages/Datasets";
 import Dashboard from "./pages/Dashboard";
 
-
 import "./index.css";
 
 function App() {
