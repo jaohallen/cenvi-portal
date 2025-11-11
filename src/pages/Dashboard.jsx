@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Papa from "papaparse";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
@@ -42,6 +42,14 @@ const Dashboard = () => {
   const [pointData, setPointData] = useState(null);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [selectedCols, setSelectedCols] = useState([]);
+  const [pivotConfigs, setPivotConfigs] = useState([]);
+  const [pivotRow, setPivotRow] = useState("");
+  const [pivotCol, setPivotCol] = useState("");
+  const [showPivotCreator, setShowPivotCreator] = useState(false);
+  const [fullscreenSection, setFullscreenSection] = useState(null); 
+  const mapRef = useRef(null);
+  const summaryRef = useRef(null);
+  const pivotRef = useRef(null);
 
   const SHEET_CSV =
     "https://docs.google.com/spreadsheets/d/e/2PACX-1vSQIiNlo_BgY_sqXu1LnXH-rDH00RB43oecoQ_PSxg50lkloSLnqKloyhyfVm2jqDL2PVX3nAKBdIl_/pub?output=csv";
@@ -170,6 +178,100 @@ const Dashboard = () => {
     setIsConfigured(true);
   };
 
+  const generatePivotTable = () => {
+    if (!pivotRow || !pivotCol) {
+      alert("Please select both Row and Column fields.");
+      return;
+    }
+
+    const result = {};
+    const rowSet = new Set();
+    const colSet = new Set();
+
+    filteredData.forEach((item) => {
+      const rowVal = item[pivotRow] || "—";
+      const colVal = item[pivotCol] || "—";
+      rowSet.add(rowVal);
+      colSet.add(colVal);
+      if (!result[rowVal]) result[rowVal] = {};
+      result[rowVal][colVal] = (result[rowVal][colVal] || 0) + 1;
+    });
+
+    const newPivot = {
+      id: Date.now(),
+      row: pivotRow,
+      col: pivotCol,
+      sortField: "row",
+      sortOrder: "asc",
+      data: {
+        rows: Array.from(rowSet),
+        cols: Array.from(colSet),
+        result,
+      },
+    };
+
+    setPivotConfigs((prev) => [...prev, newPivot]);
+    setShowPivotCreator(false);
+    setPivotRow("");
+    setPivotCol("");
+  };
+
+  const handlePivotSort = (pivotId, field) => {
+    setPivotConfigs((prev) =>
+      prev.map((p) => {
+        if (p.id !== pivotId) return p;
+        const newOrder =
+          p.sortField === field && p.sortOrder === "asc" ? "desc" : "asc";
+        return { ...p, sortField: field, sortOrder: newOrder };
+      })
+    );
+  };
+
+  const toggleFullscreen = (section) => {
+    setFullscreenSection((prev) => (prev === section ? null : section));
+  };
+
+  const SectionToolbar = ({ title, children, scrollRef }) => {
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+      if (!scrollRef?.current) return;
+      const handleScroll = () => {
+        setScrolled(scrollRef.current.scrollTop > 10); // threshold for shrink
+      };
+      const refEl = scrollRef.current;
+      refEl.addEventListener("scroll", handleScroll);
+      return () => refEl.removeEventListener("scroll", handleScroll);
+    }, [scrollRef]);
+
+    return (
+      <div
+        className={`flex justify-between items-center sticky top-0 z-10 transition-all duration-300 ${
+          scrolled
+            ? "bg-[#f8f9fa]/90 backdrop-blur-sm shadow-md py-1"
+            : "bg-[#f8f9fa] py-2"
+        } border-b border-gray-300 px-4 rounded-t-lg`}
+      >
+        <h3
+          className={`font-bold text-[#344e41] transition-all duration-300 ${
+            scrolled ? "text-base" : "text-lg"
+          }`}
+        >
+          {title}
+        </h3>
+        <div className="flex gap-2 items-center">{children}</div>
+      </div>
+    );
+  };
+
+  useEffect(() => {
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setFullscreenSection(null);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, []);
+
   return (
     <div className="bg-gray-50 pt-[90px]">
       
@@ -234,9 +336,27 @@ const Dashboard = () => {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-4 px-5 pb-5">
-        {/* 🗺️ Map Section */}
-        <div className="w-full lg:w-[30%] h-[400px] lg:h-[calc(100vh-160px)] rounded-xl overflow-hidden shadow-md border border-gray-200 bg-white">
+        <div
+          className={`grid grid-cols-1 lg:grid-cols-[30%_40%_30%] gap-4 px-5 pb-5 transition-all duration-500 ${
+            fullscreenSection ? "relative" : ""
+          }`}
+        >        
+        {/* Map Section */}
+        <div
+          className={`relative rounded-xl shadow-md border border-gray-200 bg-white overflow-hidden flex flex-col transition-all duration-500 ${
+            fullscreenSection === "map"
+              ? "fixed inset-0 z-50 h-screen w-screen p-6"
+              : "h-[400px] lg:h-[calc(100vh-160px)]"
+          }`}
+        >
+          <SectionToolbar title="Map View">
+            <button
+              onClick={() => toggleFullscreen("map")}
+              className="px-3 py-1 text-sm bg-[#3a5a40] text-white rounded-md hover:bg-[#588157]"
+            >
+              {fullscreenSection === "map" ? "Exit Fullscreen" : "Fullscreen"}
+            </button>
+          </SectionToolbar>
           {isConfigured && filteredData.length > 0 ? (
             <MapContainer
               center={[
@@ -289,27 +409,86 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* 📊 Charts Section */}
+        {/* Charts Section */}
         {isConfigured && (
-          <div className="w-full lg:w-[70%] flex flex-col bg-white rounded-xl shadow-md border border-gray-200 p-5 gap-8 overflow-y-auto max-h-[calc(100vh-160px)]">
-            <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
-              <h3 className="text-2xl font-bold text-[#344e41] flex items-center gap-3">
-                Data Summary ({selectedCols.length} Items)
-                <span className="text-base font-normal text-gray-600">
-                  Total rows loaded: <span className="font-semibold text-[#3a5a40]">{filteredData.length.toLocaleString()}</span>
-                </span>
-              </h3>
+          <div
+            className={`relative rounded-xl shadow-md border border-gray-200 bg-white p-5 flex flex-col gap-8 overflow-y-auto transition-all duration-500 ${
+              fullscreenSection === "summary"
+                ? "fixed inset-0 z-50 h-screen w-screen p-6"
+                : "max-h-[calc(100vh-160px)]"
+            }`}
+          >
+            <SectionToolbar title="Data Summary">
+              <button
+                onClick={() => setShowPivotCreator(!showPivotCreator)}
+                className="px-3 py-1 text-sm bg-[#3a5a40] text-white rounded-md hover:bg-[#588157]"
+              >
+                {showPivotCreator ? "Cancel Pivot" : "Create Pivot Table"}
+              </button>
 
               <button
                 onClick={() => {
                   localStorage.removeItem("selectedColumns");
                   setShowConfigModal(true);
                 }}
-                className="px-3 py-1 text-sm text-white bg-[#3a5a40] rounded-md hover:bg-[#588157] transition"
+                className="px-3 py-1 text-sm bg-[#344e41] text-white rounded-md hover:bg-[#588157]"
               >
                 Change Columns
               </button>
+
+              <button
+                onClick={() => toggleFullscreen("summary")}
+                className="px-3 py-1 text-sm bg-[#3a5a40] text-white rounded-md hover:bg-[#588157]"
+              >
+                {fullscreenSection === "summary" ? "Exit Fullscreen" : "Fullscreen"}
+              </button>
+            </SectionToolbar>
+
+            <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
+              <h3 className="text-2xl font-bold text-[#344e41] flex items-center gap-3">
+                Data Summary ({selectedCols.length} Items)
+                <span className="text-base font-normal text-gray-600">
+                  Total rows loaded:{" "}
+                  <span className="font-semibold text-[#3a5a40]">
+                    {filteredData.length.toLocaleString()}
+                  </span>
+                </span>
+              </h3>
             </div>
+
+            {/* Pivot Creator Dropdowns */}
+            {showPivotCreator && (
+              <div className="flex flex-wrap gap-3 bg-[#f8f9fa] border border-gray-300 rounded-lg p-4 mb-6 items-center justify-center">
+                <select
+                  value={pivotRow}
+                  onChange={(e) => setPivotRow(e.target.value)}
+                  className="border rounded-md px-3 py-2"
+                >
+                  <option value="">Select Row Field</option>
+                  {columns.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={pivotCol}
+                  onChange={(e) => setPivotCol(e.target.value)}
+                  className="border rounded-md px-3 py-2"
+                >
+                  <option value="">Select Column Field</option>
+                  {columns.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+
+                <button
+                  onClick={generatePivotTable}
+                  className="px-5 py-2 rounded-md bg-[#3a5a40] text-white font-medium hover:bg-[#588157]"
+                >
+                  Generate Pivot
+                </button>
+              </div>
+            )}
 
             {Object.entries(selectedChartData).map(([col, data]) => {
               const total = data.length;
@@ -413,6 +592,174 @@ const Dashboard = () => {
             })}
           </div>
         )}
+
+        {/* 🧮 Pivot Tables Column */}
+        <div
+          className={`relative rounded-xl shadow-md border border-gray-200 bg-whiteflex flex-col gap-8 overflow-y-auto transition-all duration-500 ${
+            fullscreenSection === "pivot"
+              ? "fixed inset-0 z-50 h-screen w-screen p-6"
+              : "max-h-[calc(100vh-160px)]"
+          }`}
+        >
+          <SectionToolbar title="Pivot Tables">
+            <button
+              onClick={() => toggleFullscreen("pivot")}
+              className="px-3 py-1 text-sm bg-[#3a5a40] text-white rounded-md hover:bg-[#588157]"
+            >
+              {fullscreenSection === "pivot" ? "Exit Fullscreen" : "Fullscreen"}
+            </button>
+          </SectionToolbar>
+            <h3 className="text-2xl font-bold text-[#344e41] mb-4 text-center">
+              Pivot Tables
+            </h3>
+
+            {pivotConfigs.length === 0 ? (
+              <p className="text-gray-500 italic text-center">
+                No pivot tables generated yet.
+              </p>
+            ) : (
+              pivotConfigs.map((pivot) => {
+                // 🧮 compute pivot dynamically so it updates when data changes
+                const result = {};
+                const rowSet = new Set();
+                const colSet = new Set();
+
+                filteredData.forEach((item) => {
+                  const rowVal = item[pivot.row] || "—";
+                  const colVal = item[pivot.col] || "—";
+                  rowSet.add(rowVal);
+                  colSet.add(colVal);
+                  if (!result[rowVal]) result[rowVal] = {};
+                  result[rowVal][colVal] = (result[rowVal][colVal] || 0) + 1;
+                });
+
+                const rows = Array.from(rowSet);
+                const cols = Array.from(colSet);
+
+                let sortedRows = [...rows];
+                if (pivot.sortField === "row") {
+                  sortedRows.sort((a, b) =>
+                    pivot.sortOrder === "asc" ? b.localeCompare(a) : a.localeCompare(b)
+                  );
+                } else if (pivot.sortField === "total") {
+                  sortedRows.sort((a, b) => {
+                    const totalA = cols.reduce((sum, c) => sum + (result[a]?.[c] || 0), 0);
+                    const totalB = cols.reduce((sum, c) => sum + (result[b]?.[c] || 0), 0);
+                    return pivot.sortOrder === "asc" ? totalB - totalA : totalA - totalB;
+                  });
+                } else {
+                  sortedRows.sort((a, b) => {
+                    const valA = result[a]?.[pivot.sortField] || 0;
+                    const valB = result[b]?.[pivot.sortField] || 0;
+                    return pivot.sortOrder === "asc" ? valB - valA : valA - valB;
+                  });
+                }
+
+                return (
+                  <div
+                    key={pivot.id}
+                    className="border-t pt-3 pb-5 bg-gray-50 rounded-lg shadow-sm mb-5"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-lg font-bold text-[#344e41]">
+                        {pivot.row} × {pivot.col}
+                      </h4>
+                      <button
+                        onClick={() =>
+                          setPivotConfigs((prev) =>
+                            prev.filter((p) => p.id !== pivot.id)
+                          )
+                        }
+                        className="text-sm text-red-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm border border-gray-300">
+                        <thead className="bg-[#344e41] text-white">
+                          <tr>
+                            <th
+                              className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
+                              onClick={() => handlePivotSort(pivot.id, "row")}
+                            >
+                              {pivot.row}
+                              {pivot.sortField === "row" &&
+                                (pivot.sortOrder === "asc" ? " ▼" : " ▲")}
+                            </th>
+                            {cols.map((c) => (
+                              <th
+                                key={c}
+                                className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
+                                onClick={() => handlePivotSort(pivot.id, c)}
+                              >
+                                {c}
+                                {pivot.sortField === c &&
+                                  (pivot.sortOrder === "asc" ? " ▼" : " ▲")}
+                              </th>
+                            ))}
+                            <th
+                              className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
+                              onClick={() => handlePivotSort(pivot.id, "total")}
+                            >
+                              Row Total
+                              {pivot.sortField === "total" &&
+                                (pivot.sortOrder === "asc" ? " ▼" : " ▲")}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedRows.map((r) => {
+                            const rowVals = result[r] || {};
+                            const rowTotal = cols.reduce(
+                              (sum, c) => sum + (rowVals[c] || 0),
+                              0
+                            );
+                            return (
+                              <tr key={r}>
+                                <td className="border px-3 py-2 font-semibold">{r}</td>
+                                {cols.map((c) => (
+                                  <td
+                                    key={c}
+                                    className="border px-3 py-2 text-center"
+                                  >
+                                    {rowVals[c] || 0}
+                                  </td>
+                                ))}
+                                <td className="border px-3 py-2 text-center font-bold">
+                                  {rowTotal}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          <tr className="bg-gray-100 font-semibold">
+                            <td className="border px-3 py-2">Column Total</td>
+                            {cols.map((c) => {
+                              const colTotal = rows.reduce(
+                                (sum, r) => sum + (result[r]?.[c] || 0),
+                                0
+                              );
+                              return (
+                                <td key={c} className="border px-3 py-2 text-center">
+                                  {colTotal}
+                                </td>
+                              );
+                            })}
+                            <td className="border px-3 py-2 text-center font-bold">
+                              {filteredData.length}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+        </div>
+
       </div>
 
       {/* 🪟 Modal for Point Details */}
@@ -455,6 +802,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
