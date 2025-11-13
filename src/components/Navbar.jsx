@@ -59,7 +59,7 @@ const Navbar = () => {
           : "bg-white/30 backdrop-blur-md"
       }`}
     >
-      <div className="flex items-center justify-between px-6 lg:px-24 py-4">
+      <div className="flex items-center justify-between px-6 lg:px-24 py-2">
         {/* 🔹 Logo */}
         <div
           onClick={handleLogoClick}
@@ -68,7 +68,7 @@ const Navbar = () => {
           <img
             src="/cenvi_logo.png"
             alt="CENVI Logo"
-            className="h-10 md:h-12 w-auto object-contain"
+            className="h-9 md:h-10 w-auto object-contain"
           />
           <span
             className={`text-xl font-bold ${
