@@ -410,7 +410,7 @@ const Dashboard = () => {
             }>
               <button
                 onClick={() => setFullscreenSection(null)}
-                className="px-3 py-2 rounded-md bg-[#344e41] text-white hover:bg-[#3a5a40] transition-colors"
+                className="px-3 py-2 rounded-md text-[#344e41] hover:text-[#3a5a40] transition-colors"
               >
                 <Minimize2 className="w-4 h-4" />
               </button>
@@ -911,7 +911,7 @@ const Dashboard = () => {
           <SectionToolbar title="Map View">
             <button
               onClick={() => toggleFullscreen("map")}
-              className="flex items-center justify-center w-9 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors"
+              className="flex items-center justify-center w-9 h-7 text-[#344e41] rounded-md hover:text-[#3a5a40] transition-colors"
               title={fullscreenSection === "map" ? "Exit Fullscreen" : "Fullscreen"}
             >
               {fullscreenSection === "map" ? (
@@ -1013,7 +1013,7 @@ const Dashboard = () => {
 
               <button
                 onClick={() => toggleFullscreen("summary")}
-                className="flex items-center justify-center w-9 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors"
+                className="flex items-center justify-center w-9 h-7 text-[#344e41] rounded-md hover:text-[#3a5a40] transition-colors"
                 title={fullscreenSection === "summary" ? "Exit Fullscreen" : "Fullscreen"}
               >
                 {fullscreenSection === "summary" ? (
@@ -1162,7 +1162,7 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={() => toggleFullscreen("pivot")}
-                className="flex items-center justify-center w-9 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors"
+                className="flex items-center justify-center w-9 h-7 text-[#344e41] rounded-md hover:text-[#3a5a40] transition-colors"
                 title={fullscreenSection === "pivot" ? "Exit Fullscreen" : "Fullscreen"}
               >
                 {fullscreenSection === "pivot" ? (
