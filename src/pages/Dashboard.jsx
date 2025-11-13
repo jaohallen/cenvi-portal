@@ -61,6 +61,10 @@ const ResetViewButton = ({ points }) => {
   );
 };
 
+const getPivotColor = (index) => {
+  const hue = (index * 60) % 360; // 6 colors rotation
+  return `hsl(${hue}, 60%, 45%)`;
+};
 
 const Dashboard = () => {
   const [filteredData, setFilteredData] = useState([]);
@@ -323,6 +327,18 @@ const Dashboard = () => {
       });
     }
   };
+  
+  useEffect(() => {
+    if (fullscreenSection) {
+      document.body.style.overflow = "hidden";  
+    } else {
+      document.body.style.overflow = "auto";   
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";    
+    };
+  }, [fullscreenSection]);
 
   const [isWide, setIsWide] = useState(window.innerWidth >= 1400);
 
@@ -331,6 +347,19 @@ const Dashboard = () => {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  const getPivotChartData = (pivot, result, rows, cols) => {
+    return rows.map((r) => {
+      const rowVals = result[r] || {};
+      const rowData = { row: r };
+
+      cols.forEach((c) => {
+        rowData[c] = rowVals[c] || 0;
+      });
+
+      return rowData;
+    });
+  };
 
   return (
     <div className="bg-gray-50 pt-[90px]">
@@ -399,7 +428,7 @@ const Dashboard = () => {
 
       {/* ✅ Fullscreen Overlay */}
       {fullscreenSection && (
-        <div className="fixed inset-0 bg-white z-50 rounded-xl shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-white z-50 shadow-2xl overflow-hidden">
           <div className="h-full flex flex-col">
             <SectionToolbar title={
               fullscreenSection === "map"
@@ -523,7 +552,7 @@ const Dashboard = () => {
                               <ResponsiveContainer width="100%" height="100%" minWidth={250} minHeight={250}>
                               <BarChart
                                 data={[...coloredData].sort((a, b) => b.value - a.value)} // ✅ sort descending
-                                margin={{ top: 10, right: 20, bottom: 10, left: 0 }}
+                                margin={{ top: 10, right: 5, left: -10, bottom: -10 }}
                               >
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis 
@@ -727,6 +756,30 @@ const Dashboard = () => {
                               >
                                 ✕
                               </button>
+                            </div>
+                            {/* 📊 Pivot Chart */}
+                            <div className="h-[300px] bg-white p-3 border mb-2">
+                              <ResponsiveContainer width="100%" height="100%">
+                                <BarChart
+                                  data={getPivotChartData(pivot, result, sortedRows, cols)}
+                                  margin={{ top: 10, right: 5, left: -10, bottom: 0 }}
+                                >
+                                  <CartesianGrid strokeDasharray="3 3" />
+                                  <XAxis dataKey="row" 
+                                    tick={{ fontSize: 12 }} 
+                                    padding={{ left: 0, right: 0 }} />
+                                  <YAxis tick={{ fontSize: 12 }}/>
+                                  <Tooltip />
+
+                                  {cols.map((c, i) => (
+                                    <Bar key={c} dataKey={c} fill={getPivotColor(i)} stackId="pivot">
+                                      {sortedRows.map((_, idx) => (
+                                        <Cell key={idx} />
+                                      ))}
+                                    </Bar>
+                                  ))}
+                                </BarChart>
+                              </ResponsiveContainer>
                             </div>
 
                             <div className="overflow-x-auto">
@@ -1001,6 +1054,7 @@ const Dashboard = () => {
               >
                 Change Columns
               </button>
+
               {/* Show only if pivot section is HIDDEN */}
               {!showPivotSection && (
                 <button
@@ -1052,7 +1106,7 @@ const Dashboard = () => {
                     <ResponsiveContainer width="100%" height="100%" minWidth={250} minHeight={250}>
                     <BarChart
                       data={[...coloredData].sort((a, b) => b.value - a.value)}
-                      margin={{ top: 10, right: 20, bottom: 10, left: 0 }}
+                      margin={{ top: 10, right: 5, left: -10, bottom: -10 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis 
@@ -1270,6 +1324,31 @@ const Dashboard = () => {
 
                     </div>
 
+                    {/* 📊 Pivot Chart */}
+                    <div className="h-[300px] bg-white p-3 border mb-2">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={getPivotChartData(pivot, result, sortedRows, cols)}
+                          margin={{ top: 10, right: 5, left: -20, bottom: 0 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="row" 
+                            tick={{ fontSize: 10 }} 
+                            padding={{ left: 0, right: 0 }} />
+                          <YAxis tick={{ fontSize: 10 }}/>
+                          <Tooltip />
+
+                          {cols.map((c, i) => (
+                            <Bar key={c} dataKey={c} fill={getPivotColor(i)} stackId="pivot">
+                              {sortedRows.map((_, idx) => (
+                                <Cell key={idx} />
+                              ))}
+                            </Bar>
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+      
                     <div className="overflow-x-auto">
                       <table className="min-w-full text-sm border border-gray-300">
                         <thead className="bg-[#344e41] text-white text-xs">
