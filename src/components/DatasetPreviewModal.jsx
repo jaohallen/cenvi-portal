@@ -29,7 +29,7 @@ const DatasetPreviewModal = ({ dataset, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-11/12 md:w-3/4 lg:w-2/3 shadow-xl p-4 relative">
+      <div className="bg-white rounded-2xl shadow-xl p-10 w-[96%] max-w-[1400px] max-h-[90vh] overflow-y-auto text-center relative animate-fadeIn">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-[#3a5a40] hover:text-[#588157] text-l font-bold bg-transparent"
@@ -37,26 +37,26 @@ const DatasetPreviewModal = ({ dataset, onClose }) => {
           ✕
         </button>
 
-        <h2 className="text-xl font-bold mb-2 text-[#3a5a40]">
+        <h2 className="text-xl font-bold mb-1 text-[#3a5a40]">
           {dataset.name}
         </h2>
         <p className="text-gray-600 mb-3">{dataset.description}</p>
-
-        <div className="h-[500px] flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden">
-          <img
-            src={fileUrl}
-            alt={dataset.name}
-            className="max-h-[480px] max-w-full rounded-lg object-contain shadow-md"
-            onError={(e) => (e.currentTarget.src = "/cenvi_logo.png")}
-          />
-        </div>
-
-        <p className="text-center text-gray-500 text-sm mt-4">
+        <p className="text-center text-gray-500 text-sm mt-2">
           Available dataset format:{" "}
           <span className="font-semibold text-[#3a5a40]">
             {dataset.available_download || "N/A"}
           </span>
         </p>
+
+        <div className="h-[700px] flex items-center justify-center bg-gray-50 rounded-lg overflow-hidden">
+          <img
+            src={fileUrl}
+            alt={dataset.name}
+            className="max-h-[680px] max-w-full rounded-lg object-contain shadow-md"
+            onError={(e) => (e.currentTarget.src = "/cenvi_logo.png")}
+          />
+        </div>
+
       </div>
     </div>
   );
