@@ -80,6 +80,8 @@ const Dashboard = () => {
   const mapRef = useRef(null);
   const summaryRef = useRef(null);
   const pivotRef = useRef(null);
+  const [showPivotSection, setShowPivotSection] = useState(false);
+  const [showPivotModal, setShowPivotModal] = useState(false);
 
 
   const SHEET_CSV =
@@ -245,6 +247,7 @@ const Dashboard = () => {
     setShowPivotCreator(false);
     setPivotRow("");
     setPivotCol("");
+    setShowPivotSection(true);
   };
 
   const handlePivotSort = (pivotId, field) => {
@@ -321,12 +324,21 @@ const Dashboard = () => {
     }
   };
 
+  const [isWide, setIsWide] = useState(window.innerWidth >= 1400);
+
+  useEffect(() => {
+    const onResize = () => setIsWide(window.innerWidth >= 1400);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   return (
     <div className="bg-gray-50 pt-[90px]">
       
       {/* Configuration Modal */}
       {showConfigModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[99999]">
+
           <div className="bg-white rounded-lg shadow-xl p-8 w-[95%] md:w-[700px] max-h-[80vh] overflow-y-auto animate-fadeIn">
             <h3 className="text-xl font-bold text-[#344e41] mb-5 text-center">
               Select Columns to Display Charts
@@ -614,48 +626,13 @@ const Dashboard = () => {
                   >
                     <SectionToolbar>
                       <button
-                        onClick={() => setShowPivotCreator(!showPivotCreator)}
+                        onClick={() => setShowPivotModal(true)}
                         className="px-3 py-1 text-sm bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40]"
                       >
-                        {showPivotCreator ? "Cancel Pivot" : "Create Pivot Table"}
+                        Create Pivot Table
+
                       </button>
                     </SectionToolbar>
-
-                    
-                    {/* Pivot Creator Dropdowns */}
-                    {showPivotCreator && (
-                      <div className="flex flex-wrap gap-3 bg-[#f8f9fa] border border-gray-300 rounded-lg p-4 mb-6 items-center justify-center">
-                        <select
-                          value={pivotRow}
-                          onChange={(e) => setPivotRow(e.target.value)}
-                          className="border rounded-md px-3 py-2"
-                        >
-                          <option value="">Select Row Field</option>
-                          {columns.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-
-                        <select
-                          value={pivotCol}
-                          onChange={(e) => setPivotCol(e.target.value)}
-                          className="border rounded-md px-3 py-2"
-                        >
-                          <option value="">Select Column Field</option>
-                          {columns.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-
-                        <button
-                          onClick={generatePivotTable}
-                          className="px-5 py-2 rounded-md bg-[#3a5a40] text-white font-medium hover:bg-[#588157]"
-                        >
-                          Generate Pivot
-                        </button>
-                      </div>
-                    )}
-
                     {pivotConfigs.length === 0 ? (
                       <p className="text-gray-500 italic text-center">
                         No pivot tables generated yet.
@@ -732,9 +709,19 @@ const Dashboard = () => {
                                 {pivot.row} × {pivot.col}
                               </h4>
                               <button
-                                onClick={() =>
-                                  setPivotConfigs((prev) => prev.filter((p) => p.id !== pivot.id))
-                                }
+                                onClick={() => {
+                                  setPivotConfigs((prev) => {
+                                    const updated = prev.filter((p) => p.id !== pivot.id);
+
+                                    // Auto-hide pivot section if last table is removed
+                                    if (updated.length === 0) {
+                                      setShowPivotSection(false);
+                                    }
+
+                                    return updated;
+                                  });
+                                }}
+
                                 className="flex items-center justify-center w-8 h-8 rounded-full text-[#344e41] hover:text-[#3a5a40] hover:text-white"
                                 title="Remove Pivot Table"
                               >
@@ -831,8 +818,87 @@ const Dashboard = () => {
           </div>
         </div>
       )}
+      {/* Pivot Creator */}
+      {showPivotModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] animate-fadeIn">
+          <div className="bg-white w-[90%] max-w-[500px] p-6 rounded-lg shadow-xl border border-gray-200">
 
-      <div className="relative grid grid-cols-1 [@media(min-width:1400px)]:grid-cols-[30%_40%_30%] gap-2 px-6 lg:px-10 pb-6 mx-auto max-w-[1920px] ">
+            <h3 className="text-xl font-bold text-[#344e41] mb-4 text-center">
+              Create Pivot Table
+            </h3>
+
+            <div className="flex flex-col gap-4">
+
+              {/* Row Field */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">Row Field</label>
+                <select
+                  value={pivotRow}
+                  onChange={(e) => setPivotRow(e.target.value)}
+                  className="w-full border rounded-md px-3 py-2 mt-1"
+                >
+                  <option value="">Select Row Field</option>
+                  {columns.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Column Field */}
+              <div>
+                <label className="text-sm font-medium text-gray-700">Column Field</label>
+                <select
+                  value={pivotCol}
+                  onChange={(e) => setPivotCol(e.target.value)}
+                  className="w-full border rounded-md px-3 py-2 mt-1"
+                >
+                  <option value="">Select Column Field</option>
+                  {columns.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+            </div>
+
+            {/* ACTION BUTTONS */}
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowPivotModal(false);
+                  setPivotRow("");
+                  setPivotCol("");
+                }}
+                className="px-4 py-2 rounded-md border border-gray-400 text-gray-700 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => {
+                  generatePivotTable();
+                  setShowPivotModal(false);
+                }}
+                className="px-5 py-2 rounded-md bg-[#3a5a40] text-white font-medium hover:bg-[#588157]"
+              >
+                Generate Pivot
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div
+        className="relative grid gap-2 px-6 lg:px-10 pb-6 mx-auto max-w-[1920px]"
+        style={{
+          gridTemplateColumns: isWide
+            ? showPivotSection
+              ? "30% 40% 30%"
+              : "30% 70%"
+            : "1fr",
+        }}
+      >
+
 
         {/* Map Section */}
         <div
@@ -935,6 +1001,15 @@ const Dashboard = () => {
               >
                 Change Columns
               </button>
+              {/* Show only if pivot section is HIDDEN */}
+              {!showPivotSection && (
+                <button
+                  onClick={() => setShowPivotModal(true)}
+                  className="flex items-center justify-center px-4 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors text-sm font-medium"
+                >
+                  Create Pivot Table
+                </button>
+              )}
 
               <button
                 onClick={() => toggleFullscreen("summary")}
@@ -1069,245 +1144,223 @@ const Dashboard = () => {
         )}
 
         {/* Pivot Tables Column */}
-        <div
-          ref={pivotRef}
-          className={`relative rounded-xl shadow-md border border-gray-200 bg-whiteflex flex-col gap-8 overflow-y-auto ${
-            fullscreenSection === "pivot"
-              ? "absolute inset-0 z-20 h-full w-full p-6 bg-white shadow-lg rounded-xl"
-              : "h-[400px] lg:h-[calc(100vh-160px)]"
-          }`}
-        >
-          <SectionToolbar title="Pivot Tables">
-            <button
-              onClick={() => setShowPivotCreator(!showPivotCreator)}
-              className="flex items-center justify-center px-4 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors text-sm font-medium"
-            >
-              {showPivotCreator ? "Cancel Pivot" : "Create Pivot Table"}
-            </button>
-            <button
-              onClick={() => toggleFullscreen("pivot")}
-              className="flex items-center justify-center w-9 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors"
-              title={fullscreenSection === "pivot" ? "Exit Fullscreen" : "Fullscreen"}
-            >
-              {fullscreenSection === "pivot" ? (
-                <Minimize2 className="w-4 h-4" />
-              ) : (
-                <Maximize2 className="w-4 h-4" />
-              )}
-            </button>
-          </SectionToolbar>
-
-          
-          {/* Pivot Creator Dropdowns */}
-          {showPivotCreator && (
-            <div className="flex flex-wrap gap-3 bg-[#f8f9fa] border border-gray-300 rounded-lg p-4 mb-6 items-center justify-center">
-              <select
-                value={pivotRow}
-                onChange={(e) => setPivotRow(e.target.value)}
-                className="border rounded-md px-3 py-2"
-              >
-                <option value="">Select Row Field</option>
-                {columns.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-
-              <select
-                value={pivotCol}
-                onChange={(e) => setPivotCol(e.target.value)}
-                className="border rounded-md px-3 py-2"
-              >
-                <option value="">Select Column Field</option>
-                {columns.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-
+        {showPivotSection && (
+          <div
+            ref={pivotRef}
+            className={`relative rounded-xl shadow-md border border-gray-200 bg-whiteflex flex-col gap-8 overflow-y-auto ${
+              fullscreenSection === "pivot"
+                ? "absolute inset-0 z-20 h-full w-full p-6 bg-white shadow-lg rounded-xl"
+                : "h-[400px] lg:h-[calc(100vh-160px)]"
+            }`}
+          >
+            <SectionToolbar title="Pivot Tables">
               <button
-                onClick={generatePivotTable}
-                className="px-5 py-2 rounded-md bg-[#3a5a40] text-white font-medium hover:bg-[#588157]"
+                onClick={() => setShowPivotModal(true)}
+                className="flex items-center justify-center px-4 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors text-sm font-medium"
               >
-                Generate Pivot
+                Create Pivot Table
               </button>
-            </div>
-          )}
+              <button
+                onClick={() => toggleFullscreen("pivot")}
+                className="flex items-center justify-center w-9 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors"
+                title={fullscreenSection === "pivot" ? "Exit Fullscreen" : "Fullscreen"}
+              >
+                {fullscreenSection === "pivot" ? (
+                  <Minimize2 className="w-4 h-4" />
+                ) : (
+                  <Maximize2 className="w-4 h-4" />
+                )}
+              </button>
+            </SectionToolbar>
 
-          {pivotConfigs.length === 0 ? (
-            <p className="text-gray-500 italic text-center">
-              No pivot tables generated yet.
-            </p>
-          ) : (
-            pivotConfigs.map((pivot) => {
-              // 🧮 compute pivot dynamically so it updates when data changes
-              const result = {};
-              const rowSet = new Set();
-              const colSet = new Set();
+            {pivotConfigs.length === 0 ? (
+              <p className="text-gray-500 italic text-center">
+                No pivot tables generated yet.
+              </p>
+            ) : (
+              pivotConfigs.map((pivot) => {
+                // 🧮 compute pivot dynamically so it updates when data changes
+                const result = {};
+                const rowSet = new Set();
+                const colSet = new Set();
 
-              filteredData.forEach((item) => {
-                const rowVal = item[pivot.row] || "—";
-                const colVal = item[pivot.col] || "—";
-                rowSet.add(rowVal);
-                colSet.add(colVal);
-                if (!result[rowVal]) result[rowVal] = {};
-                result[rowVal][colVal] = (result[rowVal][colVal] || 0) + 1;
-              });
+                filteredData.forEach((item) => {
+                  const rowVal = item[pivot.row] || "—";
+                  const colVal = item[pivot.col] || "—";
+                  rowSet.add(rowVal);
+                  colSet.add(colVal);
+                  if (!result[rowVal]) result[rowVal] = {};
+                  result[rowVal][colVal] = (result[rowVal][colVal] || 0) + 1;
+                });
 
-              const rows = Array.from(rowSet);
-              const cols = Array.from(colSet);
+                const rows = Array.from(rowSet);
+                const cols = Array.from(colSet);
 
-              let sortedRows = [...rows];
-              
-              if (pivot.sortField === "row") {
-                sortedRows.sort((a, b) => {
-                  const aVal = a ?? "";
-                  const bVal = b ?? "";
+                let sortedRows = [...rows];
+                
+                if (pivot.sortField === "row") {
+                  sortedRows.sort((a, b) => {
+                    const aVal = a ?? "";
+                    const bVal = b ?? "";
 
-                  // numeric comparison if both are numbers
-                  if (!isNaN(aVal) && !isNaN(bVal)) {
+                    // numeric comparison if both are numbers
+                    if (!isNaN(aVal) && !isNaN(bVal)) {
+                      return pivot.sortOrder === "asc"
+                        ? Number(aVal) - Number(bVal)
+                        : Number(bVal) - Number(aVal);
+                    }
+
+                    // string fallback
                     return pivot.sortOrder === "asc"
-                      ? Number(aVal) - Number(bVal)
-                      : Number(bVal) - Number(aVal);
-                  }
+                      ? String(aVal).localeCompare(String(bVal))
+                      : String(bVal).localeCompare(String(aVal));
+                  });
+                } else if (pivot.sortField === "total") {
+                  sortedRows.sort((a, b) => {
+                    const totalA = cols.reduce(
+                      (sum, c) => sum + (Number(result[a]?.[c]) || 0),
+                      0
+                    );
+                    const totalB = cols.reduce(
+                      (sum, c) => sum + (Number(result[b]?.[c]) || 0),
+                      0
+                    );
+                    return pivot.sortOrder === "asc"
+                      ? totalA - totalB
+                      : totalB - totalA;
+                  });
+                } else {
+                  sortedRows.sort((a, b) => {
+                    const valA = Number(result[a]?.[pivot.sortField]) || 0;
+                    const valB = Number(result[b]?.[pivot.sortField]) || 0;
+                    return pivot.sortOrder === "asc"
+                      ? valA - valB
+                      : valB - valA;
+                  });
+                }
 
-                  // string fallback
-                  return pivot.sortOrder === "asc"
-                    ? String(aVal).localeCompare(String(bVal))
-                    : String(bVal).localeCompare(String(aVal));
-                });
-              } else if (pivot.sortField === "total") {
-                sortedRows.sort((a, b) => {
-                  const totalA = cols.reduce(
-                    (sum, c) => sum + (Number(result[a]?.[c]) || 0),
-                    0
-                  );
-                  const totalB = cols.reduce(
-                    (sum, c) => sum + (Number(result[b]?.[c]) || 0),
-                    0
-                  );
-                  return pivot.sortOrder === "asc"
-                    ? totalA - totalB
-                    : totalB - totalA;
-                });
-              } else {
-                sortedRows.sort((a, b) => {
-                  const valA = Number(result[a]?.[pivot.sortField]) || 0;
-                  const valB = Number(result[b]?.[pivot.sortField]) || 0;
-                  return pivot.sortOrder === "asc"
-                    ? valA - valB
-                    : valB - valA;
-                });
-              }
+                return (
+                  <div
+                    key={pivot.id}
+                    className="border-t pt-3 pb-5 bg-gray-50 rounded-lg shadow-sm mb-5"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="text-m font-semibold text-[#2f3e34] mb-2 pl-4 ">
+                        {pivot.row} × {pivot.col}
+                      </h4>
+                      <button
+                        onClick={() => {
+                          setPivotConfigs((prev) => {
+                            const updated = prev.filter((p) => p.id !== pivot.id);
 
-              return (
-                <div
-                  key={pivot.id}
-                  className="border-t pt-3 pb-5 bg-gray-50 rounded-lg shadow-sm mb-5"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="text-m font-semibold text-[#2f3e34] mb-2 pl-4 ">
-                      {pivot.row} × {pivot.col}
-                    </h4>
-                    <button
-                      onClick={() =>
-                        setPivotConfigs((prev) => prev.filter((p) => p.id !== pivot.id))
-                      }
-                      className="flex items-center justify-center w-8 h-8 rounded-full text-[#344e41] hover:text-[#3a5a40] hover:text-white"
-                      title="Remove Pivot Table"
-                    >
-                      ✕
-                    </button>
+                            // Auto-hide pivot section if last table is removed
+                            if (updated.length === 0) {
+                              setShowPivotSection(false);
+                            }
 
-                  </div>
+                            return updated;
+                          });
+                        }}
 
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full text-sm border border-gray-300">
-                      <thead className="bg-[#344e41] text-white">
-                        <tr>
-                          <th
-                            className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
-                            onClick={() => handlePivotSort(pivot.id, "row")}
-                          >
-                            {pivot.row}
-                            {pivot.sortField === "row" &&
-                              (pivot.sortOrder === "asc" ? " ▲" : " ▼")}
-                          </th>
-                          {cols.map((c) => (
+                        className="flex items-center justify-center w-8 h-8 rounded-full text-[#344e41] hover:text-[#3a5a40] hover:text-white"
+                        title="Remove Pivot Table"
+                      >
+                        ✕
+                      </button>
+
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full text-sm border border-gray-300">
+                        <thead className="bg-[#344e41] text-white">
+                          <tr>
                             <th
-                              key={c}
                               className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
-                              onClick={() => handlePivotSort(pivot.id, c)}
+                              onClick={() => handlePivotSort(pivot.id, "row")}
                             >
-                              {c}
-                              {pivot.sortField === c &&
+                              {pivot.row}
+                              {pivot.sortField === "row" &&
                                 (pivot.sortOrder === "asc" ? " ▲" : " ▼")}
                             </th>
-                          ))}
-                          <th
-                            className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
-                            onClick={() => handlePivotSort(pivot.id, "total")}
-                          >
-                            Row Total
-                            {pivot.sortField === "total" &&
-                              (pivot.sortOrder === "asc" ? " ▲" : " ▼")}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedRows.map((r) => {
-                          const rowVals = result[r] || {};
-                          const rowTotal = cols.reduce(
-                            (sum, c) => sum + (rowVals[c] || 0),
-                            0
-                          );
-                          return (
-                            <tr key={r}>
-                              <td className="border px-3 py-2 font-semibold">{r}</td>
-                              {cols.map((c) => (
-                                <td
-                                  key={c}
-                                  className="border px-3 py-2 text-center"
-                                >
-                                  {rowVals[c] || 0}
-                                </td>
-                              ))}
-                              <td className="border px-3 py-2 text-center font-bold">
-                                {rowTotal}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                        <tr className="bg-gray-100 font-semibold">
-                          <td className="border px-3 py-2">Column Total</td>
-                          {cols.map((c) => {
-                            const colTotal = rows.reduce(
-                              (sum, r) => sum + (result[r]?.[c] || 0),
+                            {cols.map((c) => (
+                              <th
+                                key={c}
+                                className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
+                                onClick={() => handlePivotSort(pivot.id, c)}
+                              >
+                                {c}
+                                {pivot.sortField === c &&
+                                  (pivot.sortOrder === "asc" ? " ▲" : " ▼")}
+                              </th>
+                            ))}
+                            <th
+                              className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
+                              onClick={() => handlePivotSort(pivot.id, "total")}
+                            >
+                              Row Total
+                              {pivot.sortField === "total" &&
+                                (pivot.sortOrder === "asc" ? " ▲" : " ▼")}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedRows.map((r) => {
+                            const rowVals = result[r] || {};
+                            const rowTotal = cols.reduce(
+                              (sum, c) => sum + (rowVals[c] || 0),
                               0
                             );
                             return (
-                              <td key={c} className="border px-3 py-2 text-center">
-                                {colTotal}
-                              </td>
+                              <tr key={r}>
+                                <td className="border px-3 py-2 font-semibold">{r}</td>
+                                {cols.map((c) => (
+                                  <td
+                                    key={c}
+                                    className="border px-3 py-2 text-center"
+                                  >
+                                    {rowVals[c] || 0}
+                                  </td>
+                                ))}
+                                <td className="border px-3 py-2 text-center font-bold">
+                                  {rowTotal}
+                                </td>
+                              </tr>
                             );
                           })}
-                          <td className="border px-3 py-2 text-center font-bold">
-                            {filteredData.length}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                          <tr className="bg-gray-100 font-semibold">
+                            <td className="border px-3 py-2">Column Total</td>
+                            {cols.map((c) => {
+                              const colTotal = rows.reduce(
+                                (sum, r) => sum + (result[r]?.[c] || 0),
+                                0
+                              );
+                              return (
+                                <td key={c} className="border px-3 py-2 text-center">
+                                  {colTotal}
+                                </td>
+                              );
+                            })}
+                            <td className="border px-3 py-2 text-center font-bold">
+                              {filteredData.length}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
 
-        </div>
+          </div>
+        )}
 
       </div>
 
       {/* Modal for Point Details */}
       {showPointModal && pointData && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[99999]">
+
           <div className="bg-white rounded-lg shadow-xl p-6 w-[90%] md:w-[800px] max-h-[80vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-[#344e41] mb-4 text-center">
               Selected Point Details
