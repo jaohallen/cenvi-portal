@@ -43,7 +43,7 @@ const Contact = () => {
 
         <div>
           <h3 className="font-semibold text-green-700 mb-1">Email</h3>
-          <p className="text-gray-700">upcebunicer@gmail.com</p>
+          <p className="text-gray-700">upcenvi@gmail.com</p>
         </div>
       </motion.div>
 </motion.section>
