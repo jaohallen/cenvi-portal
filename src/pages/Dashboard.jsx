@@ -483,7 +483,7 @@ const Dashboard = () => {
                     >
                       <SectionToolbar>
                         <div className="flex items-center justify-between mb-2 gap-3">
-                          <p className="text-[15px] text-[#344e41] font-medium leading-none">
+                          <p className="text-[13px] text-[#344e41] font-medium leading-none">
                             {selectedCols.length} items, {filteredData.length.toLocaleString()} rows loaded
                           </p>
 
@@ -513,7 +513,7 @@ const Dashboard = () => {
                             className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t pt-3 pb-6 shadow-sm"
                           >
                             <div className="col-span-full">
-                              <h4 className="text-lg font-bold text-[#3a5a40] text-center">
+                              <h4 className="text-m font-bold text-[#3a5a40] text-center">
                                 {col}
                               </h4>
                             </div>
@@ -564,7 +564,7 @@ const Dashboard = () => {
                               {/* inner container with padding to avoid scrolling through margins */}
                               <div className="flex-1 overflow-y-auto relative">
                                 <table className="min-w-full text-sm border-collapse">
-                                  <thead className="top-0 z-50">
+                                  <thead className="top-0 z-50 text-xs">
                                     <tr className="bg-[#344e41] text-white shadow-sm">
                                       <th className="border border-[#2a3a32] px-3 py-2 text-left">Label</th>
                                       <th className="border border-[#2a3a32] px-3 py-2 text-center">Frequency</th>
@@ -635,7 +635,7 @@ const Dashboard = () => {
                     </SectionToolbar>
                     {pivotConfigs.length === 0 ? (
                       <p className="text-gray-500 italic text-center">
-                        No pivot tables generated yet.
+                        No pivot tables generated.
                       </p>
                     ) : (
                       pivotConfigs.map((pivot) => {
@@ -705,7 +705,7 @@ const Dashboard = () => {
                             className="border-t pt-3 pb-5 bg-gray-50 rounded-lg shadow-sm mb-5"
                           >
                             <div className="flex justify-between items-center mb-2">
-                              <h4 className="text-lg font-bold text-[#344e41] pl-4">
+                              <h4 className="text-m font-bold text-[#344e41] pl-4">
                                 {pivot.row} × {pivot.col}
                               </h4>
                               <button
@@ -722,7 +722,7 @@ const Dashboard = () => {
                                   });
                                 }}
 
-                                className="flex items-center justify-center w-8 h-8 rounded-full text-[#344e41] hover:text-[#3a5a40] hover:text-white"
+                                className="flex items-center justify-center w-8 h-8 rounded-full text-[#344e41] hover:text-[#3a5a40]"
                                 title="Remove Pivot Table"
                               >
                                 ✕
@@ -731,7 +731,7 @@ const Dashboard = () => {
 
                             <div className="overflow-x-auto">
                               <table className="min-w-full text-sm border border-gray-300">
-                                <thead className="bg-[#344e41] text-white">
+                                <thead className="bg-[#344e41] text-white text-xs">
                                   <tr>
                                     <th
                                       className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
@@ -1024,7 +1024,7 @@ const Dashboard = () => {
               </button>
             </SectionToolbar>
             <div className="flex justify-between items-center mb-2 flex-wrap gap-2">
-              <h3 className="text-base font-normal font-bold text-[#344e41] flex items-center gap-3 pl-4">
+              <h3 className="text-[14px] text-base text-[#344e41] flex items-center gap-3 pl-4">
                 {selectedCols.length} items, {filteredData.length.toLocaleString()} rows loaded
               </h3>
             </div>
@@ -1042,7 +1042,7 @@ const Dashboard = () => {
                   className="grid grid-cols-1 lg:grid-cols-2 gap-6 border-t pt-3 pb-6 bg-gray-50 shadow-sm"
                 >
                   <div className="col-span-full">
-                    <h4 className="text-m font-semibold text-[#2f3e34] text-center">
+                    <h4 className="text-[14px] font-semibold text-[#2f3e34] text-center">
                       {col}
                     </h4>
                   </div>
@@ -1092,7 +1092,7 @@ const Dashboard = () => {
                   <div className="h-[320px] min-h-[300px] bg-white flex flex-col">
                     <div className="flex-1 overflow-y-auto relative">
                       <table className="min-w-full text-sm border-collapse">
-                        <thead className="top-0 z-50">
+                        <thead className="top-0 z-50 text-xs">
                           <tr className="bg-[#344e41] text-white shadow-sm">
                             <th className="border border-[#2a3a32] px-3 py-2 text-left">Label</th>
                             <th className="border border-[#2a3a32] px-3 py-2 text-center">Frequency</th>
@@ -1175,7 +1175,7 @@ const Dashboard = () => {
 
             {pivotConfigs.length === 0 ? (
               <p className="text-gray-500 italic text-center">
-                No pivot tables generated yet.
+                No pivot tables generated.
               </p>
             ) : (
               pivotConfigs.map((pivot) => {
@@ -1245,7 +1245,7 @@ const Dashboard = () => {
                     className="border-t pt-3 pb-5 bg-gray-50 rounded-lg shadow-sm mb-5"
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <h4 className="text-m font-semibold text-[#2f3e34] mb-2 pl-4 ">
+                      <h4 className="text-[14px] font-semibold text-[#2f3e34] pl-4 ">
                         {pivot.row} × {pivot.col}
                       </h4>
                       <button
@@ -1262,7 +1262,7 @@ const Dashboard = () => {
                           });
                         }}
 
-                        className="flex items-center justify-center w-8 h-8 rounded-full text-[#344e41] hover:text-[#3a5a40] hover:text-white"
+                        className="flex items-center justify-center w-8 h-8 rounded-full text-[#344e41] hover:text-[#3a5a40]"
                         title="Remove Pivot Table"
                       >
                         ✕
@@ -1272,7 +1272,7 @@ const Dashboard = () => {
 
                     <div className="overflow-x-auto">
                       <table className="min-w-full text-sm border border-gray-300">
-                        <thead className="bg-[#344e41] text-white">
+                        <thead className="bg-[#344e41] text-white text-xs">
                           <tr>
                             <th
                               className="border px-3 py-2 cursor-pointer hover:bg-[#588157]"
