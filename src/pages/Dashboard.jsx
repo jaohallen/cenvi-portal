@@ -1049,7 +1049,7 @@ const Dashboard = () => {
                   localStorage.removeItem("selectedColumns");
                   setShowConfigModal(true);
                 }}
-                className="flex items-center justify-center px-4 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors text-sm font-medium"
+                className="flex items-center justify-center px-4 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors text-[11px] font-medium"
                 title="Change Columns"
               >
                 Change Columns
@@ -1059,7 +1059,7 @@ const Dashboard = () => {
               {!showPivotSection && (
                 <button
                   onClick={() => setShowPivotModal(true)}
-                  className="flex items-center justify-center px-4 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors text-sm font-medium"
+                  className="flex items-center justify-center px-4 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors text-[11px] font-medium"
                 >
                   Create Pivot Table
                 </button>
@@ -1210,7 +1210,7 @@ const Dashboard = () => {
             <SectionToolbar title="Pivot Tables">
               <button
                 onClick={() => setShowPivotModal(true)}
-                className="flex items-center justify-center px-4 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors text-sm font-medium"
+                className="flex items-center justify-center px-4 h-7 bg-[#344e41] text-white rounded-md hover:bg-[#3a5a40] transition-colors text-[11px] font-medium"
               >
                 Create Pivot Table
               </button>

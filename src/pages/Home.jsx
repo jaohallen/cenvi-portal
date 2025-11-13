@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 const Home = () => {
   const [carousel, setCarousel] = useState([]);
   const [highlights, setHighlights] = useState([]);
-  const [lastUpdated, setLastUpdated] = useState(null); // ✅ new state
   const [current, setCurrent] = useState(0);
   const navigate = useNavigate();
 
