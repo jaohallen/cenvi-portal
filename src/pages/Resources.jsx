@@ -76,7 +76,7 @@ const Contact = () => {
         {/* Right column - Presentations / AVPs */}
         <div className="rounded-xl p-6">
           <h3 className="text-xl font-semibold text-[#3a5a40] mb-4 text-center">
-            Presentations & AVPs
+            Presentations
           </h3>
           {presentations.length > 0 ? (
             <ul className="list-disc pl-5 space-y-2 text-left">
