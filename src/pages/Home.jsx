@@ -8,7 +8,7 @@ const Home = () => {
   const navigate = useNavigate();
 
   const SHEET_JSON_URL =
-    "https://script.google.com/macros/s/AKfycbyYEz7bD0eW5W24rBkw7rJUywF5QFehnXX_sImKWMV8vArhlsZpZEPhuWa0Tks_49FOVQ/exec";
+    "https://script.google.com/macros/s/AKfycbx52GNkXWO-vpUES3hUoF6XGZvPSkLYj_8Bl2P4SdKvmEqqCr0fGneSC7Kn03FoSxOZ4A/exec";
 
   useEffect(() => {
     const fetchData = () => {
@@ -17,7 +17,6 @@ const Home = () => {
         .then((data) => {
           setCarousel(data.carousel || []);
           setHighlights(data.highlights || []);
-          setLastUpdated(data.lastUpdated || null);
         })
         .catch((err) => console.error("Error loading content:", err));
     };
@@ -37,7 +36,7 @@ const Home = () => {
     return () => clearInterval(timer);
   }, [carousel]);
 
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null); // same variable, but store an object
 
   const handleNavigateToDashboard = () => {
     navigate("/dashboard"); // same as navbar click
@@ -162,7 +161,7 @@ const Home = () => {
             {highlights.map((item, i) => (
               <div
                 key={i}
-                onClick={() => setSelectedImage(item.src)}
+                onClick={() => setSelectedImage(item)}
                 className="relative rounded-xl overflow-hidden shadow-md hover:shadow-lg transition group w-[500px] cursor-pointer"
               >
                 <img
@@ -171,10 +170,7 @@ const Home = () => {
                   className="w-full h-64 object-cover transform group-hover:scale-105 transition-transform duration-500"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-black/40 backdrop-blur-sm text-white text-center p-4 ">
-                  <h4 className="text-lg font-semibold drop-shadow-md">{item.title}</h4>
-                  {item.description && (
-                    <p className="text-sm opacity-90 mt-1">{item.description}</p>
-                  )}
+                  <h4 className="text-m font-semibold drop-shadow-md">{item.title}</h4>
                 </div>
               </div>
 
@@ -269,21 +265,38 @@ const Home = () => {
 
       </section>
 
-      
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 transition-opacity duration-500 animate-fadeIn"
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
           onClick={() => setSelectedImage(null)}
         >
           <div
             className="relative max-w-5xl max-h-[90vh] p-4"
-            onClick={(e) => e.stopPropagation()} // prevent closing when clicking image
+            onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={selectedImage}
-              alt="Preview"
-              className="w-auto max-w-full h-auto max-h-[85vh] rounded-xl shadow-lg object-contain transition-transform duration-500 transform hover:scale-105"
-            />
+            {/* WRAPPER THAT LOCKS WIDTH */}
+            <div className="relative inline-block">
+              
+              {/* IMAGE */}
+              <img
+                src={selectedImage.src}
+                alt={selectedImage.title}
+                className="max-h-[85vh] rounded-xl shadow-lg object-contain"
+              />
+
+              {/* CAPTION MATCHES EXACT WIDTH OF IMAGE */}
+              <div className="absolute bottom-0 left-0 w-full bg-black/40 backdrop-blur-sm text-white text-center p-4 rounded-b-xl">
+                <h4 className="text-lg font-semibold drop-shadow-md">
+                  {selectedImage.title}
+                </h4>
+                {selectedImage.description && (
+                  <p className="text-m opacity-90 mt-1">
+                    {selectedImage.description}
+                  </p>
+                )}
+              </div>
+
+            </div>
           </div>
         </div>
       )}

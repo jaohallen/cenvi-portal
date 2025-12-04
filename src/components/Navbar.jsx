@@ -139,6 +139,13 @@ const Navbar = () => {
           </span>
 
           <span
+            onClick={() => handleScrollToSection("resources")}
+            className="cursor-pointer capitalize transition hover:text-[#588157]"
+          >
+            Resources
+          </span>
+
+          <span
             onClick={() => handleScrollToSection("contact")}
             className="cursor-pointer capitalize transition hover:text-[#588157]"
           >
@@ -179,6 +186,13 @@ const Navbar = () => {
             className="block text-lg capitalize cursor-pointer hover:text-[#588157]"
           >
             Dashboard
+          </span>
+
+          <span
+            onClick={() => handleScrollToSection("resources")}
+            className="block text-lg capitalize cursor-pointer hover:text-[#588157]"
+          >
+            Resources
           </span>
 
           <span

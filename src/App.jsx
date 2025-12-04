@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import About from "./pages/About";
 import Services from "./pages/Services";
 import Collaborators from "./pages/Collaborators";
+import Resources from "./pages/Resources";
 import Contact from "./pages/Contact";
 import WebMap from "./pages/WebMap";
 import Datasets from "./pages/Datasets";
@@ -29,6 +30,7 @@ function App() {
                   <section id="about"><About /></section>
                   <section id="services"><Services /></section>
                   <section id="collaborators"><Collaborators /></section>
+                  <section id="resources"><Resources /></section>
                   <section id="contact"><Contact /></section>
                 </>
               }
