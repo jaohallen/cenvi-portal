@@ -124,36 +124,17 @@ const Home = () => {
             Welcome to CENVI
           </span>
         </h2>
-        <p className="text-lg text-gray-700 max-w-3xl mb-10">
+        <p className="text-lg text-gray-700 max-w-3xl mb-5">
           The Center for Environmental Informatics (CENVI) advances environmental
           resilience through data-driven research, geospatial analytics, and community
           engagement.
         </p>
 
-        {/* Links */}
-        <div className="flex flex-col items-center space-y-4">
-          <a
-            onClick={() => {
-              const aboutSection = document.getElementById("about");
-              if (aboutSection) aboutSection.scrollIntoView({ behavior: "smooth" });
-            }}
-            className="text-[#3a5a40] font-semibold text-lg cursor-pointer hover:text-[#588157] transition"
-          >
-            Learn more about CENVI ↓
-          </a>
-
-          <a
-            onClick={() => navigate("/datasets")}
-            className="text-[#3a5a40] font-semibold text-lg cursor-pointer hover:text-[#588157] transition"
-          >
-            Explore Datasets →
-          </a>
-        </div>
       </section>
 
       <section className="w-full px-8 lg:px-24 py-20 bg-white">
         <h3 className="text-3xl font-semibold text-[#3a5a40] mb-8 text-center">
-          Project Highlights
+          Highlights
         </h3>
 
         {highlights.length > 0 ? (
@@ -180,7 +161,7 @@ const Home = () => {
           <p className="text-center text-gray-600">Loading highlights...</p>
         )}
       </section>
-
+      {/*  
       <section className="w-full px-8 lg:px-24 py-20 bg-gray-50">
         <h3 className="text-3xl font-semibold text-[#3a5a40] mb-8 text-center">
           CENVI Portal Features
@@ -188,10 +169,8 @@ const Home = () => {
         <p className="text-lg text-gray-700 leading-relaxed mb-10 text-center max-w-3xl mx-auto">
           Explore geospatial insights through our interactive web map and visualization dashboard.
         </p>
-
-        {/* Two-column feature section */}
+      
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
-          {/* Left: Interactive Map Feature */}
           <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition cursor-pointer">
             <div className="w-full aspect-video overflow-hidden">
               <img
@@ -218,7 +197,6 @@ const Home = () => {
             </div>
           </div>
 
-          {/* Right: Dashboard Feature */}
           <div className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition cursor-pointer">
             <div className="w-full aspect-video overflow-hidden">
               <img
@@ -245,25 +223,8 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Embedded ArcGIS Map 
-        <div className="rounded-xl overflow-hidden shadow-md">
-          <arcgis-embedded-map
-            style={{
-              width: "100%",
-              height: "70vh",
-              minHeight: "400px",
-              maxHeight: "800px",
-              borderRadius: "12px",
-            }}
-            item-id="5af713038cf54283bbe8141d34a960d7"
-            theme="light"
-            center="124.02247309357192,10.96061178065168"
-            scale="577790.554289"
-            portal-url="https://upcenvi.maps.arcgis.com"
-          ></arcgis-embedded-map>
-        </div>*/}
-
-      </section>
+      </section>*/}
+      
 
       {selectedImage && (
         <div
