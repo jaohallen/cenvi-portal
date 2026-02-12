@@ -1,6 +1,6 @@
 export default function ProjectCard({ logo, title, description }) {
   return (
-    <div className="bg-white">
+    <div className="bg-gray-50">
       <div className="flex justify-center mb-4">
         <img
           src={logo}

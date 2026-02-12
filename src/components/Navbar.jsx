@@ -7,6 +7,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isResearchProjectsPage = location.pathname === "/projectdetails";
   const isDatasetsPage = location.pathname === "/datasets";
   const isDashboardPage = location.pathname.startsWith("/dashboard");
 
@@ -17,6 +18,11 @@ const Navbar = () => {
       if (section) section.scrollIntoView({ behavior: "smooth" });
     }, 500);
     setIsOpen(false);
+  };
+
+  const handleNavigateToResearchProjects = () => {
+    setIsOpen(false);
+    navigate("/projectdetails");
   };
 
   const handleNavigateToDatasets = () => {
@@ -120,6 +126,15 @@ const Navbar = () => {
           ))}
 
           <span
+            onClick={handleNavigateToResearchProjects}
+            className={`cursor-pointer capitalize transition hover:text-[#588157] ${
+              isDatasetsPage ? "font-semibold" : ""
+            }`}
+          >
+            Research Projects
+          </span>
+
+          <span
             onClick={handleNavigateToDatasets}
             className={`cursor-pointer capitalize transition hover:text-[#588157] ${
               isDatasetsPage ? "font-semibold" : ""
@@ -172,7 +187,12 @@ const Navbar = () => {
               {item}
             </span>
           ))}
-
+          <span
+            onClick={handleNavigateToResearchProjects}
+            className="block text-lg capitalize cursor-pointer hover:text-[#588157]"
+          >
+            Research Projects
+          </span>
           <span
             onClick={handleNavigateToDatasets}
             className="block text-lg capitalize cursor-pointer hover:text-[#588157]"

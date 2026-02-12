@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import About from "./pages/About";
 import Research_Projects from "./pages/Research_Projects";
+import ProjectDetails from "./pages/ProjectDetails";
 import Services from "./pages/Services";
 import Collaborators from "./pages/Collaborators";
 import Resources from "./pages/Resources";
@@ -41,6 +42,7 @@ function App() {
             {/* Separate Web Map page */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/datasets" element={<Datasets />} />
+            <Route path="/projectdetails" element={<ProjectDetails />} />
           </Routes>
         </main>
         <Footer />
