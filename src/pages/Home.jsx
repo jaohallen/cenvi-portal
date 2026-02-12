@@ -44,7 +44,7 @@ const Home = () => {
 
   return (
     <div className="w-full relative">
-      <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] h-[400px] md:h-[550px] overflow-hidden group">
+      <div className="relative w-screen left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] h-[500px] md:h-[750px] overflow-hidden group">
         {carousel.length > 0 ? (
           carousel.map((item, index) => (
             <img
@@ -124,7 +124,7 @@ const Home = () => {
             Welcome to CENVI
           </span>
         </h2>
-        <p className="text-lg text-gray-700 max-w-3xl mb-5">
+        <p className="text-lg text-gray-700 max-w-3xl mb-0">
           The Center for Environmental Informatics (CENVI) advances environmental
           resilience through data-driven research, geospatial analytics, and community
           engagement.
