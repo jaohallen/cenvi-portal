@@ -12,6 +12,7 @@ const Navbar = () => {
 
   const isDatasetsPage = location.pathname === "/datasets";
   const isDashboardPage = location.pathname.startsWith("/dashboard");
+  const isProjectDetailsPage = location.pathname === "/projectdetails";
 
   /* =========================
      NAVIGATION HANDLERS
@@ -88,7 +89,7 @@ const Navbar = () => {
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
-        isDatasetsPage || isDashboardPage || isScrolled
+        isDatasetsPage || isDashboardPage || isProjectDetailsPage || isScrolled
           ? "bg-[#344E41] backdrop-blur-md shadow-md text-white"
           : "bg-white/30 backdrop-blur-md"
       }`}
@@ -107,7 +108,7 @@ const Navbar = () => {
           />
           <span
             className={`text-xl font-bold ${
-              isDatasetsPage || isDashboardPage || isScrolled
+              isDatasetsPage || isDashboardPage || isProjectDetailsPage || isScrolled
                 ? "text-white"
                 : "text-[#344e41]"
             }`}
@@ -124,7 +125,7 @@ const Navbar = () => {
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className={`h-6 w-6 ${
-              isDatasetsPage || isDashboardPage || isScrolled
+              isDatasetsPage || isDashboardPage || isProjectDetailsPage || isScrolled
                 ? "text-white"
                 : "text-[#344e41]"
             }`}
