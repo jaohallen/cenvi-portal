@@ -15,7 +15,6 @@ const Research_Projects = () => {
             Our Research Projects
           </span>
         </h2>
-
         <div className="relative w-full overflow-hidden">
           <motion.div
             className="flex gap-12 items-center"

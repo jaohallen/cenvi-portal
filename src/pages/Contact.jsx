@@ -38,7 +38,7 @@ const Contact = () => {
 
         <div>
           <h3 className="font-semibold text-green-700 mb-1">Phone</h3>
-          <p className="text-gray-700">+63 912 345 6789</p>
+          <p className="text-gray-700">+63 908 353 3727 (Ms. Terai Alicaba - Project Coordinator)</p>
         </div>
 
         <div>

@@ -11,17 +11,23 @@ const ProjectDetails = () => {
           </span>
         </h2>
 
-        <p className="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-16">
+        <p className="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-8">
           Explore CENVI’s funded research initiatives in environmental informatics,
           disaster risk reduction, geospatial analytics, and climate adaptation.
         </p>
+        
+        <img
+          src="/CENVI_briefer.png"
+          alt="CENVI Briefer"
+          className="pb-10"
+        />
 
         {/* List Layout */}
         <div className="space-y-12">
           {projects.map((project) => (
             <div
               key={project.id}
-              className="flex flex-col md:flex-col lg:flex-row items-center lg:items-start text-center lg:text-left gap-8 border-b pb-10"
+              className="flex flex-col md:flex-col lg:flex-row items-center lg:items-start text-center lg:text-left gap-8 pb-8 pt-4"
             >
 
               {/* Left: Logo */}
@@ -46,12 +52,11 @@ const ProjectDetails = () => {
           ))}
         </div>
       </div>
-      {/* Contact CTA */}
-    <div className="mt-20 text-center">
-      <p className="text-lg text-gray-700">
-        To know more or inquire about the outputs and datasets, please contact CENVI.
-      </p>
-    </div>
+      <div className="mt-20 text-center">
+        <p className="text-lg text-gray-700">
+          To know more or inquire about the outputs and datasets, please contact CENVI.
+        </p>
+      </div>
 
     </section>
   );
