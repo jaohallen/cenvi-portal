@@ -14,10 +14,6 @@ const Navbar = () => {
   const isDashboardPage = location.pathname.startsWith("/dashboard");
   const isProjectDetailsPage = location.pathname === "/projectdetails";
 
-  /* =========================
-     NAVIGATION HANDLERS
-  ========================= */
-
   const handleScrollToSection = (id) => {
     navigate("/");
     setTimeout(() => {
@@ -41,10 +37,6 @@ const Navbar = () => {
     navigate("/");
   };
 
-  /* =========================
-     SCROLL EFFECT
-  ========================= */
-
   useEffect(() => {
     if (isDatasetsPage || isDashboardPage) {
       setIsScrolled(true);
@@ -66,10 +58,6 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isDatasetsPage, isDashboardPage]);
 
-  /* =========================
-     CLICK OUTSIDE DROPDOWN
-  ========================= */
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (toolsRef.current && !toolsRef.current.contains(event.target)) {
@@ -81,11 +69,7 @@ const Navbar = () => {
     return () =>
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  /* =========================
-     RENDER
-  ========================= */
-
+  
   return (
     <nav
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
