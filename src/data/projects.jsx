@@ -16,7 +16,7 @@ export const projects = [
   {
     id: 6,
     logo: "/ISWEAR.png",
-    title: "iSWEAR (Installation of Standby Wells for Emergencies and Research)",
+    title: "ISWEAR (Installation of Standby Wells for Emergencies and Research)",
     description:
       "The project established standby wells that serve both as emergency water sources and groundwater research monitoring sites, strengthening water security, disaster preparedness, and understanding of groundwater dynamics. (2022–2023)",
   },

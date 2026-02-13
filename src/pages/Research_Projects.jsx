@@ -29,12 +29,12 @@ const Research_Projects = () => {
             {scrollingProjects.map((project, index) => (
               <div
                 key={index}
-                className="flex-shrink-0 w-20 h-24 flex items-center justify-center"
+                className="flex-shrink-0 w-32 h-32 flex items-center justify-center"
               >
                 <img
                   src={project.logo}
                   alt={project.title}
-                  className="max-h-20 object-contain opacity-80 hover:opacity-100 transition duration-300"
+                  className="max-h-28 object-contain opacity-80 hover:opacity-100 transition duration-300"
                 />
               </div>
             ))}
