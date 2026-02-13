@@ -113,7 +113,7 @@ const Home = () => {
         )}
       </div>
 
-      <section className="w-full px-8 lg:px-24 py-24 bg-gray-50 text-center flex flex-col items-center">
+      <section className="w-full px-8 lg:px-24 py-14 bg-gray-50 text-center flex flex-col items-center">
         <img
           src="/cenvi_logo.png"
           alt="CENVI Logo"
