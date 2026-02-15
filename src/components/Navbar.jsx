@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown, Menu, X } from "lucide-react";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,17 +11,32 @@ const Navbar = () => {
   const navigate = useNavigate();
   const toolsRef = useRef(null);
 
-  const isDatasetsPage = location.pathname === "/datasets";
-  const isDashboardPage = location.pathname.startsWith("/dashboard");
-  const isProjectDetailsPage = location.pathname === "/projectdetails";
+  // Determine if we are on a page that needs a dark/solid navbar immediately
+  const isDarkPage = 
+    location.pathname === "/datasets" || 
+    location.pathname.startsWith("/dashboard") || 
+    location.pathname === "/projectdetails";
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [isOpen]);
 
   const handleScrollToSection = (id) => {
-    navigate("/");
-    setTimeout(() => {
+    if (location.pathname !== "/") {
+      navigate("/");
+      setTimeout(() => {
+        const section = document.getElementById(id);
+        if (section) section.scrollIntoView({ behavior: "smooth" });
+      }, 500);
+    } else {
       const section = document.getElementById(id);
       if (section) section.scrollIntoView({ behavior: "smooth" });
-    }, 500);
-
+    }
     setIsOpen(false);
     setIsToolsOpen(false);
   };
@@ -34,161 +50,127 @@ const Navbar = () => {
   const handleLogoClick = () => {
     setIsOpen(false);
     setIsToolsOpen(false);
-    navigate("/");
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate("/");
+    }
   };
 
+  // Scroll detection
   useEffect(() => {
-    if (isDatasetsPage || isDashboardPage) {
+    if (isDarkPage) {
       setIsScrolled(true);
       return;
     }
-
     const handleScroll = () => {
-      const carousel = document.querySelector("#home");
-      if (carousel) {
-        const carouselBottom =
-          carousel.offsetTop + carousel.offsetHeight;
-        setIsScrolled(window.scrollY + 80 >= carouselBottom);
-      }
+      setIsScrolled(window.scrollY > 50);
     };
-
     window.addEventListener("scroll", handleScroll);
-    handleScroll();
-
+    handleScroll(); 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isDatasetsPage, isDashboardPage]);
+  }, [isDarkPage]);
 
+  // Click outside to close DESKTOP dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (toolsRef.current && !toolsRef.current.contains(event.target)) {
         setIsToolsOpen(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
+
   return (
     <nav
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 ${
-        isDatasetsPage || isDashboardPage || isProjectDetailsPage || isScrolled
-          ? "bg-[#344E41] backdrop-blur-md shadow-md text-white"
-          : "bg-white/30 backdrop-blur-md"
+      className={`fixed top-0 left-0 w-full z-[999] transition-all duration-300 ${
+        isDarkPage || isScrolled
+          ? "bg-[#344E41] shadow-lg py-2"
+          : "bg-gradient-to-b from-black/60 to-transparent py-4"
       }`}
     >
-      <div className="flex items-center justify-between px-6 lg:px-24 py-2">
+      <div className="max-w-[1920px] mx-auto px-6 lg:px-12 flex items-center justify-between">
 
         {/* ================= LOGO ================= */}
         <div
           onClick={handleLogoClick}
-          className="flex items-center space-x-3 cursor-pointer"
+          className="flex items-center space-x-3 cursor-pointer group z-[1001] relative"
         >
           <img
             src="/cenvi_logo.png"
             alt="CENVI Logo"
-            className="h-9 md:h-10 w-auto object-contain"
+            className="h-10 w-auto object-contain drop-shadow-md transition-transform group-hover:scale-105"
           />
-          <span
-            className={`text-xl font-bold ${
-              isDatasetsPage || isDashboardPage || isProjectDetailsPage || isScrolled
-                ? "text-white"
-                : "text-[#344e41]"
-            }`}
-          >
+          <span className="text-xl font-bold text-white tracking-wide drop-shadow-md">
             CENVI
           </span>
         </div>
 
-        {/* ================= HAMBURGER ================= */}
+        {/* ================= HAMBURGER ICON ================= */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="lg:hidden bg-transparent border-none focus:outline-none"
+          className="lg:hidden text-white focus:outline-none p-2 z-[1001] relative"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className={`h-6 w-6 ${
-              isDatasetsPage || isDashboardPage || isProjectDetailsPage || isScrolled
-                ? "text-white"
-                : "text-[#344e41]"
-            }`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d={
-                isOpen
-                  ? "M6 18L18 6M6 6l12 12"
-                  : "M4 6h16M4 12h16M4 18h16"
-              }
-            />
-          </svg>
+          {isOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
 
         {/* ================= DESKTOP LINKS ================= */}
-        <div className="hidden lg:flex space-x-6 font-medium items-center">
+        <div className="hidden lg:flex items-center space-x-8 text-sm font-medium text-white/90">
+          
+          <span
+            onClick={() => handleScrollToSection("about")}
+            className="cursor-pointer hover:text-white hover:underline underline-offset-4 transition-all"
+          >
+            About
+          </span>
+          
+          <span
+            onClick={() => handleScrollToSection("services")}
+            className="cursor-pointer hover:text-white hover:underline underline-offset-4 transition-all"
+          >
+            Services
+          </span>
 
-          {["about", "services", "collaborators"].map((item) => (
-            <span
-              key={item}
-              onClick={() => handleScrollToSection(item)}
-              className="cursor-pointer capitalize transition hover:text-[#588157]"
-            >
-              {item}
-            </span>
-          ))}
+          <span
+            onClick={() => handleScrollToSection("collaborators")}
+            className="cursor-pointer hover:text-white hover:underline underline-offset-4 transition-all"
+          >
+            Collaborators
+          </span>
 
           <span
             onClick={() => handleNavigate("/projectdetails")}
-            className="cursor-pointer capitalize transition hover:text-[#588157]"
+            className="cursor-pointer hover:text-white hover:underline underline-offset-4 transition-all"
           >
             Research Projects
           </span>
 
-          {/* ================= TOOLS DROPDOWN ================= */}
-          <div className="relative" ref={toolsRef}>
-            <span
-              onClick={() => setIsToolsOpen((prev) => !prev)}
-              className={`cursor-pointer capitalize flex items-center gap-1 transition hover:text-[#588157] ${
-                isDatasetsPage || isDashboardPage
-                  ? "font-semibold"
-                  : ""
-              }`}
+          {/* --- TOOLS DROPDOWN --- */}
+          <div className="relative group" ref={toolsRef}>
+            <button
+              onClick={() => setIsToolsOpen(!isToolsOpen)}
+              className="flex items-center gap-1 cursor-pointer hover:text-white transition-all focus:outline-none"
             >
               Tools
-              <svg
-                className={`w-4 h-4 transition-transform duration-200 ${
-                  isToolsOpen ? "rotate-180" : ""
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </span>
+              <ChevronDown 
+                size={16} 
+                className={`transition-transform duration-200 ${isToolsOpen ? "rotate-180" : ""}`} 
+              />
+            </button>
 
             {isToolsOpen && (
-              <div className="absolute left-0 top-full mt-2 w-44 bg-white text-[#344e41] rounded-md shadow-lg z-50">
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-48 bg-white text-gray-800 rounded-lg shadow-xl py-2 animate-in fade-in zoom-in-95 duration-200 border border-gray-100 overflow-hidden">
                 <span
                   onClick={() => handleNavigate("/datasets")}
-                  className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  className="block px-4 py-3 hover:bg-green-50 hover:text-[#344E41] cursor-pointer transition-colors"
                 >
                   Datasets
                 </span>
+                <div className="h-px bg-gray-100 mx-2"></div>
                 <span
                   onClick={() => handleNavigate("/dashboard")}
-                  className="block px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  className="block px-4 py-3 hover:bg-green-50 hover:text-[#344E41] cursor-pointer transition-colors"
                 >
                   Dashboard
                 </span>
@@ -197,71 +179,76 @@ const Navbar = () => {
           </div>
 
           <span
-            onClick={() => handleScrollToSection("resources")}
-            className="cursor-pointer capitalize transition hover:text-[#588157]"
-          >
-            Resources
-          </span>
-
-          <span
             onClick={() => handleScrollToSection("contact")}
-            className="cursor-pointer capitalize transition hover:text-[#588157]"
+            className="px-5 py-2 bg-white text-[#344E41] rounded-full font-semibold hover:bg-[#dad7cd] transition-colors cursor-pointer"
           >
-            Contact
+            Contact Us
           </span>
         </div>
       </div>
 
-      {/* ================= MOBILE MENU ================= */}
-      {isOpen && (
-        <div className="lg:hidden bg-[#3a5a40]/30 backdrop-blur-md border-t text-center px-6 py-4 space-y-3 font-medium shadow-md">
+      {/* ================= MOBILE SIDEBAR MENU ================= */}
+      <div 
+        className={`fixed inset-0 z-[1000] lg:hidden transition-visibility duration-300 ${
+          isOpen ? "visible" : "invisible delay-300"
+        }`}
+      >
+         {/* 1. THE BACKDROP */}
+         <div 
+            onClick={() => setIsOpen(false)}
+            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+              isOpen ? "opacity-100" : "opacity-0"
+            }`}
+         ></div>
 
-          {["home", "about", "services", "collaborators"].map((item) => (
-            <span
-              key={item}
-              onClick={() => handleScrollToSection(item)}
-              className="block text-lg capitalize cursor-pointer hover:text-[#588157]"
-            >
-              {item}
-            </span>
-          ))}
+         {/* 2. THE DRAWER */}
+         <div 
+           className={`absolute top-0 right-0 h-full w-3/4 max-w-sm bg-[#344E41] shadow-2xl transition-transform duration-300 ease-out flex flex-col pt-24 px-6 ${
+             isOpen ? "translate-x-0" : "translate-x-full"
+           }`}
+         >
+            <div className="flex flex-col space-y-4 text-white text-lg font-medium text-left">
+              {["home", "about", "services", "collaborators"].map((item) => (
+                <span
+                  key={item}
+                  onClick={() => handleScrollToSection(item)}
+                  className="capitalize cursor-pointer border-b border-white/10 pb-3 hover:text-green-200 transition-colors"
+                >
+                  {item}
+                </span>
+              ))}
 
-          <span
-            onClick={() => handleNavigate("/projectdetails")}
-            className="block text-lg capitalize cursor-pointer hover:text-[#588157]"
-          >
-            Research Projects
-          </span>
+              <span
+                onClick={() => handleNavigate("/projectdetails")}
+                className="cursor-pointer border-b border-white/10 pb-3 hover:text-green-200 transition-colors"
+              >
+                Research Projects
+              </span>
 
-          <span
-            onClick={() => handleNavigate("/datasets")}
-            className="block text-lg capitalize cursor-pointer hover:text-[#588157]"
-          >
-            Datasets
-          </span>
+              <span
+                onClick={() => handleNavigate("/datasets")}
+                className="cursor-pointer border-b border-white/10 pb-3 hover:text-green-200 transition-colors"
+              >
+                Datasets
+              </span>
 
-          <span
-            onClick={() => handleNavigate("/dashboard")}
-            className="block text-lg capitalize cursor-pointer hover:text-[#588157]"
-          >
-            Dashboard
-          </span>
+              <span
+                onClick={() => handleNavigate("/dashboard")}
+                className="cursor-pointer border-b border-white/10 pb-3 hover:text-green-200 transition-colors"
+              >
+                Dashboard
+              </span>
 
-          <span
-            onClick={() => handleScrollToSection("resources")}
-            className="block text-lg capitalize cursor-pointer hover:text-[#588157]"
-          >
-            Resources
-          </span>
-
-          <span
-            onClick={() => handleScrollToSection("contact")}
-            className="block text-lg capitalize cursor-pointer hover:text-[#588157]"
-          >
-            Contact
-          </span>
-        </div>
-      )}
+              {/* Updated Contact Link to match others */}
+              <span
+                onClick={() => handleScrollToSection("contact")}
+                className="capitalize cursor-pointer border-b border-white/10 pb-3 hover:text-green-200 transition-colors"
+              >
+                Contact Us
+              </span>
+            </div>
+         </div>
+      </div>
     </nav>
   );
 };

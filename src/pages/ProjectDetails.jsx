@@ -1,63 +1,177 @@
-import ProjectCard from "../components/ProjectCard";
+import React, { useState, useEffect } from "react";
 import { projects } from "../data/projects";
+import { Mail, ArrowRight, X, Phone, Copy, FileText, Check } from "lucide-react";
 
 const ProjectDetails = () => {
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [copiedField, setCopiedField] = useState("");
+
+  const email = "upcenvi@gmail.com";
+  const phone = "+63 912 345 6789";
+
+  // Lock scroll when modal is open
+  useEffect(() => {
+    document.body.style.overflow = showContactModal ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [showContactModal]);
+
+  const handleCopy = (text, field) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(""), 1500);
+  };
+
   return (
-    <section className="w-full py-20">
+    <section className="w-full min-h-screen bg-gray-50 pt-24 pb-20 relative">
       <div className="max-w-6xl mx-auto px-6">
-        <h2 className="text-4xl md:text-5xl font-bold text-[#344e41] mt-10 mb-10 text-center tracking-tight relative">
-          <span className="relative inline-block after:content-[''] after:block after:w-24 after:h-1 after:bg-[#3a5a40] after:mx-auto after:mt-2">
-            Research Projects
-          </span>
-        </h2>
-
-        <p className="text-lg text-gray-700 text-center max-w-3xl mx-auto mb-8">
-          Explore CENVI’s funded research initiatives in environmental informatics,
-          disaster risk reduction, geospatial analytics, and climate adaptation.
-        </p>
         
-        <img
-          src="/CENVI_briefer.png"
-          alt="CENVI Briefer"
-          className="pb-10"
-        />
+        {/* --- HEADER --- */}
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-[#344e41] mb-6 tracking-tight">
+            Research Projects
+          </h2>
+          <div className="h-1.5 w-24 bg-[#3a5a40] mx-auto rounded-full mb-6"></div>
+          <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Explore CENVI’s funded research initiatives in environmental informatics,
+            disaster risk reduction, geospatial analytics, and climate adaptation.
+          </p>
+        </div>
 
-        {/* List Layout */}
-        <div className="space-y-12">
+        {/* --- BRIEFER IMAGE --- */}
+        <div className="mb-16 bg-white p-2 md:p-4 rounded-2xl shadow-sm border border-gray-100">
+           {/* Placeholder for when the image loads */}
+           <div className="bg-gray-100 rounded-xl overflow-hidden min-h-[300px]">
+              <img
+                src="/CENVI_briefer.png"
+                alt="CENVI Briefer Infographic"
+                className="w-full h-auto object-cover"
+              />
+           </div>
+        </div>
+
+        {/* --- PROJECTS LIST --- */}
+        <div className="space-y-6">
           {projects.map((project) => (
             <div
               key={project.id}
-              className="flex flex-col md:flex-col lg:flex-row items-center lg:items-start text-center lg:text-left gap-8 pb-8 pt-4"
+              className="group bg-white rounded-2xl p-8 shadow-sm hover:shadow-md border border-gray-100 transition-all duration-300 flex flex-col md:flex-row items-center md:items-start gap-8"
             >
-
               {/* Left: Logo */}
-              <div className="w-28 h-28 flex-shrink-0 mx-auto lg:mx-0">
+              <div className="w-32 h-32 flex-shrink-0 bg-gray-50 rounded-xl p-4 flex items-center justify-center border border-gray-100 group-hover:border-[#3a5a40]/30 transition-colors">
                 <img
                   src={project.logo}
                   alt={project.title}
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain mix-blend-multiply"
                 />
               </div>
 
-              {/* Right: Title + Description */}
-              <div>
-                <h3 className="text-2xl font-semibold text-[#344e41] mb-3">
+              {/* Right: Content */}
+              <div className="flex-grow text-center md:text-left">
+                <h3 className="text-2xl font-bold text-[#344e41] mb-3 group-hover:text-[#3a5a40] transition-colors">
                   {project.title}
                 </h3>
-                <p className="text-gray-700 leading-relaxed">
+                <p className="text-gray-600 leading-relaxed text-base">
                   {project.description}
                 </p>
               </div>
             </div>
           ))}
         </div>
-      </div>
-      <div className="mt-20 text-center">
-        <p className="text-lg text-gray-700">
-          To know more or inquire about the outputs and datasets, please contact CENVI.
-        </p>
+
+        {/* --- FOOTER CTA (Triggers Modal) --- */}
+        <div className="mt-20 text-center bg-[#344e41] rounded-3xl p-10 md:p-16 text-white shadow-xl relative overflow-hidden">
+          {/* Decorative background circle */}
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
+          
+          <h3 className="text-2xl md:text-3xl font-bold mb-4 relative z-10">
+            Interested in our research outputs?
+          </h3>
+          <p className="text-green-100 mb-8 max-w-2xl mx-auto relative z-10">
+            To know more or inquire about specific outputs, methodologies, and datasets generated by these projects, please contact the CENVI office directly.
+          </p>
+          
+          <button 
+            onClick={() => setShowContactModal(true)}
+            className="inline-flex items-center gap-2 bg-white text-[#344e41] px-8 py-3 rounded-full font-bold hover:bg-green-50 hover:scale-105 transition-all shadow-lg relative z-10"
+          >
+            <Mail size={20} /> Contact Us <ArrowRight size={18} />
+          </button>
+        </div>
+
       </div>
 
+      {/* --- CONTACT MODAL --- */}
+      {showContactModal && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200"
+          onClick={() => setShowContactModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full relative transform transition-all scale-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowContactModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition bg-gray-100 p-1 rounded-full"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                 <FileText className="text-[#3a5a40]" size={32} />
+              </div>
+              <h3 className="text-2xl font-bold text-[#344E41]">Contact CENVI</h3>
+              <p className="text-gray-500 text-sm mt-2">
+                Reach out to us for research collaborations, data requests, or general inquiries.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Email */}
+              <div className="group flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-[#3a5a40] hover:bg-green-50/30 transition">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <Mail className="text-[#3a5a40] flex-shrink-0" size={20} />
+                  <span className="text-gray-700 truncate text-sm sm:text-base font-medium">{email}</span>
+                </div>
+                <button
+                  onClick={() => handleCopy(email, "email")}
+                  className="p-2 text-gray-400 hover:text-[#3a5a40] transition"
+                  title="Copy Email"
+                >
+                  {copiedField === "email" ? <Check size={18} className="text-green-600" /> : <Copy size={18} />}
+                </button>
+              </div>
+
+              {/* Phone */}
+              <div className="group flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-[#3a5a40] hover:bg-green-50/30 transition">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <Phone className="text-[#3a5a40] flex-shrink-0" size={20} />
+                  <span className="text-gray-700 truncate text-sm sm:text-base font-medium">{phone}</span>
+                </div>
+                <button
+                  onClick={() => handleCopy(phone, "phone")}
+                  className="p-2 text-gray-400 hover:text-[#3a5a40] transition"
+                  title="Copy Phone"
+                >
+                  {copiedField === "phone" ? <Check size={18} className="text-green-600" /> : <Copy size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-8 text-center">
+              <button 
+                 onClick={() => setShowContactModal(false)}
+                 className="text-gray-400 hover:text-gray-600 text-sm font-medium transition"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
