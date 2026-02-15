@@ -16,7 +16,7 @@ const Datasets = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const email = "upcenvi@gmail.com";
-  const phone = "+63 912 345 6789";
+  const phone = "+63 908 353 3727";
 
   // --- FETCH DATA ---
   useEffect(() => {
@@ -267,7 +267,8 @@ const Datasets = () => {
               </div>
               <h3 className="text-2xl font-bold text-[#344E41]">Request Data Access</h3>
               <p className="text-gray-500 text-sm mt-2">
-                Contact us to request full access to high-resolution files and raw datasets.
+                Contact us to request full access to high-resolution files and raw datasets. <br />
+                Contact Number - Ms. Terai Alicaba (Program Coordinator)
               </p>
             </div>
 

@@ -4,13 +4,11 @@ import { MapPin, Phone, Mail } from "lucide-react";
 const Contact = () => {
   return (
     <section className="w-full bg-white py-24 relative overflow-hidden">
-      {/* Decorative Background Elements */}
       <div className="absolute top-0 left-0 w-64 h-64 bg-[#3a5a40]/5 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#3a5a40]/5 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
 
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         
-        {/* --- Header --- */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-[#344e41] mb-6 tracking-tight">
             Get in Touch
@@ -21,14 +19,9 @@ const Contact = () => {
           </p>
         </div>
 
-        {/* =========================================
-            MOBILE VIEW: Single Combined Card (Compact)
-            (Visible only on small screens)
-            ========================================= */}
         <div className="md:hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="space-y-6">
-            
-            {/* Visit Us */}
+
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
                 <MapPin className="text-[#3a5a40]" size={20} />
@@ -41,7 +34,6 @@ const Contact = () => {
               </div>
             </div>
 
-            {/* Call Us */}
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
                 <Phone className="text-[#3a5a40]" size={20} />
@@ -53,7 +45,6 @@ const Contact = () => {
               </div>
             </div>
 
-            {/* Email Us */}
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0 w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
                 <Mail className="text-[#3a5a40]" size={20} />
@@ -67,11 +58,7 @@ const Contact = () => {
 
           </div>
         </div>
-
-        {/* =========================================
-            DESKTOP VIEW: 3 Grid Cards
-            (Hidden on mobile, visible on medium+ screens)
-           ========================================= */}
+        
         <div className="hidden md:grid md:grid-cols-3 gap-8">
           
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">

@@ -7,7 +7,7 @@ const ProjectDetails = () => {
   const [copiedField, setCopiedField] = useState("");
 
   const email = "upcenvi@gmail.com";
-  const phone = "+63 912 345 6789";
+  const phone = "+63 908 353 3727";
 
   // Lock scroll when modal is open
   useEffect(() => {
@@ -116,7 +116,8 @@ const ProjectDetails = () => {
               </div>
               <h3 className="text-2xl font-bold text-[#344E41]">Contact CENVI</h3>
               <p className="text-gray-500 text-sm mt-2">
-                Reach out to us for research collaborations, data requests, or general inquiries.
+                Reach out to us for research collaborations, data requests, or general inquiries.<br />
+                Contact Number - Ms. Terai Alicaba (Program Coordinator)
               </p>
             </div>
 
