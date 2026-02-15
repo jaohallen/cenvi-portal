@@ -66,7 +66,6 @@ const Collaborators = () => {
         </span>
       </h2>
 
-      {/* Render each group */}
       {Object.entries(collaborators).map(([group, items]) => (
         <div key={group} className="mb-12">
           <h3 className="text-2xl font-semibold text-[#588157] mb-6 text-center">
@@ -75,10 +74,8 @@ const Collaborators = () => {
 
           <div className="flex flex-wrap justify-center items-start gap-10">
             {items.map((col) => (
-              <a
+              <p
                 key={col.name}
-                href={col.url}
-                target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center hover:scale-105 transition-transform"
               >
@@ -90,7 +87,7 @@ const Collaborators = () => {
                 <span className="text-md text-gray-700 text-center font-medium w-32">
                   {col.name}
                 </span>
-              </a>
+              </p>
             ))}
           </div>
 

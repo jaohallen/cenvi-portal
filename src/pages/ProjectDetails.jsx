@@ -27,7 +27,6 @@ const ProjectDetails = () => {
     <section className="w-full min-h-screen bg-gray-50 pt-24 pb-20 relative">
       <div className="max-w-6xl mx-auto px-6">
         
-        {/* --- HEADER --- */}
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-[#344e41] mb-6 tracking-tight">
             Research Projects
@@ -39,9 +38,7 @@ const ProjectDetails = () => {
           </p>
         </div>
 
-        {/* --- BRIEFER IMAGE --- */}
         <div className="mb-16 bg-white p-2 md:p-4 rounded-2xl shadow-sm border border-gray-100">
-           {/* Placeholder for when the image loads */}
            <div className="bg-gray-100 rounded-xl overflow-hidden min-h-[300px]">
               <img
                 src="/CENVI_briefer.png"
@@ -51,14 +48,12 @@ const ProjectDetails = () => {
            </div>
         </div>
 
-        {/* --- PROJECTS LIST --- */}
         <div className="space-y-6">
           {projects.map((project) => (
             <div
               key={project.id}
               className="group bg-white rounded-2xl p-8 shadow-sm hover:shadow-md border border-gray-100 transition-all duration-300 flex flex-col md:flex-row items-center md:items-start gap-8"
             >
-              {/* Left: Logo */}
               <div className="w-32 h-32 flex-shrink-0 bg-gray-50 rounded-xl p-4 flex items-center justify-center border border-gray-100 group-hover:border-[#3a5a40]/30 transition-colors">
                 <img
                   src={project.logo}
@@ -67,7 +62,6 @@ const ProjectDetails = () => {
                 />
               </div>
 
-              {/* Right: Content */}
               <div className="flex-grow text-center md:text-left">
                 <h3 className="text-2xl font-bold text-[#344e41] mb-3 group-hover:text-[#3a5a40] transition-colors">
                   {project.title}
@@ -80,9 +74,7 @@ const ProjectDetails = () => {
           ))}
         </div>
 
-        {/* --- FOOTER CTA (Triggers Modal) --- */}
         <div className="mt-20 text-center bg-[#344e41] rounded-3xl p-10 md:p-16 text-white shadow-xl relative overflow-hidden">
-          {/* Decorative background circle */}
           <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
           
           <h3 className="text-2xl md:text-3xl font-bold mb-4 relative z-10">
@@ -102,7 +94,6 @@ const ProjectDetails = () => {
 
       </div>
 
-      {/* --- CONTACT MODAL --- */}
       {showContactModal && (
         <div
           className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200"
@@ -130,7 +121,6 @@ const ProjectDetails = () => {
             </div>
 
             <div className="space-y-4">
-              {/* Email */}
               <div className="group flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-[#3a5a40] hover:bg-green-50/30 transition">
                 <div className="flex items-center gap-3 overflow-hidden">
                   <Mail className="text-[#3a5a40] flex-shrink-0" size={20} />
@@ -145,7 +135,6 @@ const ProjectDetails = () => {
                 </button>
               </div>
 
-              {/* Phone */}
               <div className="group flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:border-[#3a5a40] hover:bg-green-50/30 transition">
                 <div className="flex items-center gap-3 overflow-hidden">
                   <Phone className="text-[#3a5a40] flex-shrink-0" size={20} />

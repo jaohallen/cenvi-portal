@@ -38,7 +38,6 @@ const Resources = () => {
 
         <div className="grid lg:grid-cols-2 gap-12">
           
-          {/* LEFT: Presentations (Visual Cards) */}
           <div>
             <h3 className="text-2xl font-semibold text-[#3a5a40] mb-6 flex items-center gap-2">
               <PlayCircle className="text-[#588157]" /> Presentations & Media
@@ -80,7 +79,6 @@ const Resources = () => {
             )}
           </div>
 
-          {/* RIGHT: Publications (List) */}
           <div>
             <h3 className="text-2xl font-semibold text-[#344e41] mb-6 flex items-center gap-2">
               <FileText className="text-[#588157]" /> Publications
@@ -116,4 +114,4 @@ const Resources = () => {
   );
 };
 
-export default Resources; // Fixed export name
+export default Resources; 

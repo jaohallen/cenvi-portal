@@ -22,47 +22,50 @@ const Contact = () => {
         </div>
 
         {/* =========================================
-            MOBILE VIEW: Single Combined Card
+            MOBILE VIEW: Single Combined Card (Compact)
             (Visible only on small screens)
-           ========================================= */}
-        <div className="md:hidden bg-white rounded-2xl shadow-sm border border-gray-100 divide-y divide-gray-100">
-          
-          {/* Address Section */}
-          <div className="p-8 flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-4">
-              <MapPin className="text-[#3a5a40]" size={24} />
+            ========================================= */}
+        <div className="md:hidden bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div className="space-y-6">
+            
+            {/* Visit Us */}
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
+                <MapPin className="text-[#3a5a40]" size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#344e41] uppercase tracking-wider">Visit Us</h3>
+                <p className="text-gray-600 text-sm leading-snug">
+                  3rd Floor TIC Building, UP Cebu, Gorordo Ave, Lahug, Cebu City
+                </p>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-[#344e41] mb-2">Visit Us</h3>
-            <p className="text-gray-600 leading-relaxed text-sm">
-              3rd Floor TIC Building, UP Cebu, <br />
-              Gorordo Ave, Lahug, Cebu City
-            </p>
-          </div>
 
-          {/* Phone Section */}
-          <div className="p-8 flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-4">
-              <Phone className="text-[#3a5a40]" size={24} />
+            {/* Call Us */}
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
+                <Phone className="text-[#3a5a40]" size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#344e41] uppercase tracking-wider">Call Us</h3>
+                <p className="text-[#344e41] font-semibold text-sm">+63 908 353 3727</p>
+                <p className="text-[10px] text-gray-500 italic">Ms. Terai Alicaba (Program Coordinator)</p>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-[#344e41] mb-2">Call Us</h3>
-            <p className="text-[#344e41] font-semibold text-base">
-              +63 908 353 3727
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Ms. Terai Alicaba (Program Coordinator)</p>
-          </div>
 
-          {/* Email Section */}
-          <div className="p-8 flex flex-col items-center text-center">
-            <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center mb-4">
-              <Mail className="text-[#3a5a40]" size={24} />
+            {/* Email Us */}
+            <div className="flex items-start gap-4">
+              <div className="flex-shrink-0 w-10 h-10 bg-green-50 rounded-full flex items-center justify-center">
+                <Mail className="text-[#3a5a40]" size={20} />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-[#344e41] uppercase tracking-wider">Email Us</h3>
+                <p className="text-[#344e41] font-semibold text-sm">upcenvi@gmail.com</p>
+                <p className="text-[10px] text-gray-500 italic">For general inquiries</p>
+              </div>
             </div>
-            <h3 className="text-lg font-bold text-[#344e41] mb-2">Email Us</h3>
-            <p className="text-[#344e41] font-semibold text-base">
-              upcenvi@gmail.com
-            </p>
-            <p className="text-xs text-gray-500 mt-1">For general inquiries</p>
-          </div>
 
+          </div>
         </div>
 
         {/* =========================================
@@ -71,7 +74,6 @@ const Contact = () => {
            ========================================= */}
         <div className="hidden md:grid md:grid-cols-3 gap-8">
           
-          {/* Address Card */}
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-6">
               <MapPin className="text-[#3a5a40]" size={32} />
@@ -84,7 +86,6 @@ const Contact = () => {
             </p>
           </div>
 
-          {/* Phone Card */}
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-6">
               <Phone className="text-[#3a5a40]" size={32} />
@@ -96,7 +97,6 @@ const Contact = () => {
             <p className="text-sm text-gray-500 mt-1">Ms. Terai Alicaba (Program Coordinator)</p>
           </div>
 
-          {/* Email Card */}
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center mb-6">
               <Mail className="text-[#3a5a40]" size={32} />
