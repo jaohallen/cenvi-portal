@@ -1,15 +1,21 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { Reorder, AnimatePresence } from "framer-motion";
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer
+} from "recharts";
 import { 
   Upload, X, Maximize2, Minimize2, Plus, MapPin, 
   FileSpreadsheet, GripVertical, Info, Settings, 
-  CheckSquare, Square, Search, Save 
+  CheckSquare, Square, Search, Save, Table, LayoutTemplate, 
+  BarChart3, ArrowDownWideNarrow, PanelLeftClose, PanelLeftOpen,
+  RotateCcw, Loader2
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import localforage from "localforage"; // <--- IMPORT THIS
 
 // --- Leaflet Icon Fix ---
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
@@ -38,187 +44,212 @@ function FitBounds({ points }) {
       map.fitBounds(bounds, { padding: [50, 50] });
     }
   }, [points, map]);
+  
+  useEffect(() => {
+     setTimeout(() => { map.invalidateSize(); }, 300);
+  });
+
   return null;
 }
 
-// --- CLUSTER ICON GENERATOR (NEW) ---
 const createClusterCustomIcon = (cluster) => {
   const count = cluster.getChildCount();
-  
-  // Dynamic sizing/coloring based on density
   let size = "w-10 h-10 text-sm";
-  let colorClass = "bg-[#3a5a40]"; // Default Green
-  let borderClass = "border-white/50";
+  let colorClass = "bg-[#3a5a40]"; 
   
   if (count > 10 && count <= 50) {
     size = "w-12 h-12 text-base";
-    colorClass = "bg-[#588157]"; // Lighter Green
+    colorClass = "bg-[#588157]";
   } else if (count > 50) {
     size = "w-14 h-14 text-lg";
-    colorClass = "bg-[#344E41]"; // Dark Green
+    colorClass = "bg-[#344E41]";
   }
 
-  // We return a Leaflet DivIcon with custom HTML (Tailwind classes inside)
   return L.divIcon({
-    html: `
-      <div class="flex items-center justify-center ${size} ${colorClass} text-white rounded-full border-4 ${borderClass} shadow-lg font-bold">
-        ${count}
-      </div>
-    `,
-    className: "bg-transparent", // Important to remove default leaflet square
-    iconSize: L.point(50, 50, true), // Coordinate reference point size
+    html: `<div class="flex items-center justify-center ${size} ${colorClass} text-white rounded-full border-4 border-white/50 shadow-lg font-bold">${count}</div>`,
+    className: "bg-transparent",
+    iconSize: L.point(50, 50, true),
   });
 };
 
+// --- PIVOT VIEW COMPONENT ---
+const PivotView = ({ data, columns, config, setConfig }) => {
+  const { rowField, colField, valField, aggFunc, showChart } = config;
 
-// --- COLUMN CONFIGURATOR COMPONENT ---
-const ColumnConfigurator = ({ allColumns, selectedColumns, onSave, onCancel }) => {
-  const [tempSelected, setTempSelected] = useState(new Set(selectedColumns));
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const toggleColumn = (col) => {
-    const newSet = new Set(tempSelected);
-    if (newSet.has(col)) newSet.delete(col);
-    else newSet.add(col);
-    setTempSelected(newSet);
+  const updateConfig = (field, value) => {
+    setConfig(prev => ({ ...prev, [field]: value }));
   };
 
-  const toggleAll = (select) => {
-    if (select) setTempSelected(new Set(allColumns));
-    else setTempSelected(new Set());
-  };
+  const { pivotData, chartData } = useMemo(() => {
+    if (!rowField || !data.length) return { pivotData: null, chartData: [] };
 
-  const filteredColumns = allColumns.filter(c => 
-    c.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    const rowKeys = new Set();
+    const colKeys = new Set();
+    const values = {}; 
+
+    data.forEach(row => {
+      const rVal = String(row[rowField] || "N/A");
+      const cVal = colField ? String(row[colField] || "Total") : "Total";
+      rowKeys.add(rVal);
+      colKeys.add(cVal);
+
+      if (!values[rVal]) values[rVal] = {};
+      if (!values[rVal][cVal]) values[rVal][cVal] = [];
+
+      let val = 1; 
+      if (valField && aggFunc !== 'count') {
+         val = parseFloat(row[valField]) || 0;
+      }
+      values[rVal][cVal].push(val);
+    });
+
+    const sortedRows = Array.from(rowKeys).sort();
+    const sortedCols = Array.from(colKeys).sort();
+
+    const resultMatrix = {};
+    let maxCellVal = 0;
+    
+    const cData = sortedRows.map(rowKey => {
+        const chartRow = { name: rowKey };
+        sortedCols.forEach(colKey => {
+            const rawVals = values[rowKey]?.[colKey] || [];
+            let result = 0;
+            if (rawVals.length > 0) {
+                if (aggFunc === 'count') result = rawVals.length;
+                else if (aggFunc === 'sum') result = rawVals.reduce((a, b) => a + b, 0);
+                else if (aggFunc === 'avg') result = rawVals.reduce((a, b) => a + b, 0) / rawVals.length;
+                else if (aggFunc === 'min') result = Math.min(...rawVals);
+                else if (aggFunc === 'max') result = Math.max(...rawVals);
+            }
+            result = Math.round(result * 100) / 100;
+            resultMatrix[rowKey] = resultMatrix[rowKey] || {};
+            resultMatrix[rowKey][colKey] = result;
+            chartRow[colKey] = result; 
+            if (result > maxCellVal) maxCellVal = result;
+        });
+        return chartRow;
+    });
+
+    return { pivotData: { sortedRows, sortedCols, resultMatrix, maxCellVal }, chartData: cData };
+  }, [data, rowField, colField, valField, aggFunc]);
+
+  const getCellColor = (val, max) => {
+    if (val === 0) return "bg-white text-gray-300";
+    const intensity = Math.min(val / max, 1);
+    if (intensity < 0.2) return "bg-[#dad7cd] text-gray-800";
+    if (intensity < 0.4) return "bg-[#a3b18a] text-gray-800";
+    if (intensity < 0.6) return "bg-[#588157] text-white";
+    if (intensity < 0.8) return "bg-[#3a5a40] text-white";
+    return "bg-[#344E41] text-white";
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
-        
-        {/* Header */}
-        <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-bold text-[#344E41] flex items-center gap-2">
-              <Settings className="text-[#3a5a40]" /> Data Cleaning
-            </h2>
-            <p className="text-sm text-gray-500">Select the columns you want to visualize in the dashboard.</p>
-          </div>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
-            <X size={24} />
-          </button>
+    <div className="flex flex-col h-full bg-gray-50 p-4 overflow-hidden gap-4">
+      <div className="bg-white p-4 rounded-xl shadow-sm border flex flex-wrap gap-4 items-end z-10">
+        <div className="flex flex-col gap-1 w-40">
+          <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1"><LayoutTemplate size={12}/> Row</label>
+          <select value={rowField} onChange={e => updateConfig("rowField", e.target.value)} className="border rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#3a5a40]">
+            <option value="">Select Row...</option>
+            {columns.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
-
-        {/* Toolbar */}
-        <div className="p-4 border-b flex gap-4 items-center bg-white">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search columns..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#3a5a40] outline-none"
-            />
-          </div>
-          <div className="flex gap-2 text-sm">
-            <button 
-              onClick={() => toggleAll(true)}
-              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 font-medium transition"
-            >
-              Select All
-            </button>
-            <button 
-              onClick={() => toggleAll(false)}
-              className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 font-medium transition"
-            >
-              Deselect All
-            </button>
-          </div>
+        <div className="flex flex-col gap-1 w-40">
+          <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1"><BarChart3 size={12} className="rotate-90"/> Column</label>
+          <select value={colField} onChange={e => updateConfig("colField", e.target.value)} className="border rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#3a5a40]">
+            <option value="">(None - Total)</option>
+            {columns.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
-
-        {/* Column Grid */}
-        <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {filteredColumns.map(col => {
-              const isSelected = tempSelected.has(col);
-              return (
-                <div 
-                  key={col} 
-                  onClick={() => toggleColumn(col)}
-                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
-                    isSelected 
-                      ? "bg-green-50 border-[#3a5a40] shadow-sm" 
-                      : "bg-white border-gray-200 hover:border-gray-300"
-                  }`}
-                >
-                  {isSelected 
-                    ? <CheckSquare className="text-[#3a5a40] shrink-0" size={20} /> 
-                    : <Square className="text-gray-300 shrink-0" size={20} />
-                  }
-                  <span className={`text-sm truncate ${isSelected ? "text-[#344E41] font-medium" : "text-gray-500"}`} title={col}>
-                    {col}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-          {filteredColumns.length === 0 && (
-            <div className="text-center py-10 text-gray-400">No columns match your search.</div>
-          )}
+        <div className="flex flex-col gap-1 w-32">
+          <label className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1"><ArrowDownWideNarrow size={12}/> Function</label>
+          <select value={aggFunc} onChange={e => updateConfig("aggFunc", e.target.value)} className="border rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#3a5a40]">
+            <option value="count">Count</option>
+            <option value="sum">Sum</option>
+            <option value="avg">Average</option>
+            <option value="min">Min</option>
+            <option value="max">Max</option>
+          </select>
         </div>
-
-        {/* Footer */}
-        <div className="p-6 border-t bg-white flex justify-end gap-3">
-          <div className="mr-auto text-sm text-gray-500 flex items-center">
-            {tempSelected.size} columns selected
+        {aggFunc !== 'count' && (
+          <div className="flex flex-col gap-1 w-40">
+            <label className="text-xs font-bold text-gray-500 uppercase">Value Field</label>
+            <select value={valField} onChange={e => updateConfig("valField", e.target.value)} className="border rounded-md px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-[#3a5a40]">
+              <option value="">Select Numeric...</option>
+              {columns.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
-          <button 
-            onClick={onCancel}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 font-medium transition"
-          >
-            Cancel Upload
-          </button>
-          <button 
-            onClick={() => onSave(Array.from(tempSelected))}
-            className="px-6 py-2 bg-[#3a5a40] hover:bg-[#344E41] text-white rounded-lg font-medium shadow-md flex items-center gap-2 transition"
-          >
-            <Save size={18} /> Confirm & Load Dashboard
-          </button>
+        )}
+        <div className="flex-1" />
+        <button onClick={() => updateConfig("showChart", !showChart)} className={`px-3 py-1.5 rounded-md text-sm font-medium border flex items-center gap-2 transition ${showChart ? 'bg-[#3a5a40] text-white border-[#3a5a40]' : 'bg-white text-gray-600'}`}>
+            <BarChart3 size={16} /> {showChart ? "Hide Chart" : "Show Chart"}
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-hidden flex flex-col gap-4">
+        {showChart && pivotData && (
+            <div className="h-1/3 min-h-[250px] bg-white rounded-xl shadow-sm border p-4">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{top: 5, right: 30, left: 20, bottom: 5}}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                        <XAxis dataKey="name" tick={{fontSize: 11}} />
+                        <YAxis tick={{fontSize: 11}} />
+                        <RechartsTooltip contentStyle={{fontSize: '12px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}/>
+                        <Legend wrapperStyle={{fontSize: '12px'}} />
+                        {pivotData.sortedCols.map((col, idx) => (
+                            <Bar key={col} dataKey={col} fill={SYMBOLOGY_COLORS[idx % SYMBOLOGY_COLORS.length]} radius={[4, 4, 0, 0]} />
+                        ))}
+                    </BarChart>
+                </ResponsiveContainer>
+            </div>
+        )}
+        <div className="flex-1 bg-white rounded-xl shadow-sm border overflow-auto relative">
+            {pivotData ? (
+            <table className="w-full text-sm text-left border-collapse">
+                <thead className="bg-gray-100 sticky top-0 z-10 text-gray-600">
+                <tr>
+                    <th className="p-3 border-b border-r font-bold sticky left-0 bg-gray-100 z-20 min-w-[150px]">{rowField} \ {colField || "Total"}</th>
+                    {pivotData.sortedCols.map(col => <th key={col} className="p-3 border-b min-w-[100px] text-center font-semibold">{col}</th>)}
+                </tr>
+                </thead>
+                <tbody>
+                {pivotData.sortedRows.map(rowKey => (
+                    <tr key={rowKey} className="hover:bg-gray-50 transition-colors">
+                    <td className="p-3 border-b border-r font-medium sticky left-0 bg-white z-10 truncate max-w-[200px]" title={rowKey}>{rowKey}</td>
+                    {pivotData.sortedCols.map(colKey => {
+                        const val = pivotData.resultMatrix[rowKey][colKey];
+                        return <td key={colKey} className={`p-3 border-b text-center border-l border-white/20 ${getCellColor(val, pivotData.maxCellVal)}`}>{val}</td>
+                    })}
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+            ) : (
+            <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                <Table size={48} className="mb-4 opacity-20"/>
+                <p>Select a <strong>Row Label</strong> above to generate the pivot table.</p>
+            </div>
+            )}
         </div>
       </div>
     </div>
   );
 };
 
+// --- SUMMARY CARD ---
 const SummaryCard = ({ item, data, onRemove, onResize }) => {
   const summaryData = useMemo(() => {
     const summary = {};
     let maxCount = 0;
-
     data.forEach((row) => {
       const value = row[item.name] || "No Data";
       summary[value] = (summary[value] || 0) + 1;
       if (summary[value] > maxCount) maxCount = summary[value];
     });
-
-    return Object.entries(summary)
-      .sort(([, a], [, b]) => b - a)
-      .map(([key, value]) => ({ key, value, percent: (value / maxCount) * 100 }));
+    return Object.entries(summary).sort(([, a], [, b]) => b - a).map(([key, value]) => ({ key, value, percent: (value / maxCount) * 100 }));
   }, [data, item.name]);
 
   return (
-    <Reorder.Item
-      value={item}
-      id={item.name}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      whileDrag={{ scale: 1.02, boxShadow: "0px 10px 20px rgba(0,0,0,0.1)" }}
-      className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col ${
-        item.size === "full" ? "h-[500px]" : "h-[300px]"
-      }`}
-    >
+    <Reorder.Item value={item} id={item.name} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col ${item.size === "full" ? "h-[500px]" : "h-[300px]"}`}>
       <div className="p-4 border-b bg-gray-50 flex justify-between items-center cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-2">
           <GripVertical size={16} className="text-gray-400" />
@@ -226,42 +257,98 @@ const SummaryCard = ({ item, data, onRemove, onResize }) => {
           <h3 className="font-bold text-sm uppercase tracking-wide text-gray-700">{item.name}</h3>
         </div>
         <div className="flex gap-1">
-          <button onClick={() => onResize(item.name)} className="p-1.5 hover:bg-gray-200 rounded text-gray-600 transition">
-            {item.size === "full" ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-          </button>
-          <button onClick={() => onRemove(item.name)} className="p-1.5 hover:bg-red-100 rounded text-red-500 transition">
-            <X size={16} />
-          </button>
+          <button onClick={() => onResize(item.name)} className="p-1.5 hover:bg-gray-200 rounded text-gray-600 transition">{item.size === "full" ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
+          <button onClick={() => onRemove(item.name)} className="p-1.5 hover:bg-red-100 rounded text-red-500 transition"><X size={16} /></button>
         </div>
       </div>
-      <div className="p-4 overflow-y-auto flex-1">
-        <div className="space-y-3">
-          {summaryData.map(({ key, value, percent }) => (
-            <div key={key} className="text-sm">
-              <div className="flex justify-between mb-1">
-                <span className="text-gray-700 font-medium truncate w-3/4" title={key}>{key}</span>
-                <span className="text-gray-500">{value}</span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2">
-                <div className="h-2 rounded-full transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: item.color }}></div>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="p-4 overflow-y-auto flex-1 space-y-3">
+        {summaryData.map(({ key, value, percent }) => (
+          <div key={key} className="text-sm">
+            <div className="flex justify-between mb-1"><span className="text-gray-700 font-medium truncate w-3/4">{key}</span><span className="text-gray-500">{value}</span></div>
+            <div className="w-full bg-gray-100 rounded-full h-2"><div className="h-2 rounded-full transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: item.color }}></div></div>
+          </div>
+        ))}
       </div>
     </Reorder.Item>
   );
 };
 
-// --- Main Dashboard ---
-
-export default function Dashboard() {
-  const [data, setData] = useState([]);
+// --- COLUMN CONFIGURATOR ---
+const ColumnConfigurator = ({ allColumns, selectedColumns, onSave, onCancel }) => {
+    const [tempSelected, setTempSelected] = useState(new Set(selectedColumns));
+    const [searchTerm, setSearchTerm] = useState("");
   
-  // State for Column Management
+    const toggleColumn = (col) => {
+      const newSet = new Set(tempSelected);
+      if (newSet.has(col)) newSet.delete(col);
+      else newSet.add(col);
+      setTempSelected(newSet);
+    };
+  
+    const toggleAll = (select) => {
+      if (select) setTempSelected(new Set(allColumns));
+      else setTempSelected(new Set());
+    };
+  
+    const filteredColumns = allColumns.filter(c => 
+      c.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  
+    return (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
+          <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
+            <div><h2 className="text-xl font-bold text-[#344E41] flex items-center gap-2"><Settings className="text-[#3a5a40]" /> Data Cleaning</h2><p className="text-sm text-gray-500">Select columns for Dashboard & Pivot Table.</p></div>
+            <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
+          </div>
+          <div className="p-4 border-b flex gap-4 items-center bg-white">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input type="text" placeholder="Search columns..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#3a5a40] outline-none" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <button onClick={() => toggleAll(true)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 font-medium transition">Select All</button>
+              <button onClick={() => toggleAll(false)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 font-medium transition">Deselect All</button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredColumns.map(col => {
+                const isSelected = tempSelected.has(col);
+                return (
+                  <div key={col} onClick={() => toggleColumn(col)} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? "bg-green-50 border-[#3a5a40] shadow-sm" : "bg-white border-gray-200 hover:border-gray-300"}`}>
+                    {isSelected ? <CheckSquare className="text-[#3a5a40] shrink-0" size={20} /> : <Square className="text-gray-300 shrink-0" size={20} />}
+                    <span className={`text-sm truncate ${isSelected ? "text-[#344E41] font-medium" : "text-gray-500"}`} title={col}>{col}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <div className="p-6 border-t bg-white flex justify-end gap-3">
+            <div className="mr-auto text-sm text-gray-500">{tempSelected.size} columns selected</div>
+            <button onClick={onCancel} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">Cancel</button>
+            <button onClick={() => onSave(Array.from(tempSelected))} className="px-6 py-2 bg-[#3a5a40] hover:bg-[#344E41] text-white rounded-lg font-medium shadow-md flex items-center gap-2">
+              <Save size={18} /> Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+};
+
+// --- MAIN DASHBOARD ---
+export default function Dashboard() {
+  const [isRestoring, setRestoring] = useState(true); // Loading state for localForage
+  const [data, setData] = useState([]);
   const [allColumns, setAllColumns] = useState([]);       
   const [activeColumns, setActiveColumns] = useState([]); 
   const [showConfig, setShowConfig] = useState(false);    
+  const [viewMode, setViewMode] = useState("map"); 
+  const [isSidebarOpen, setSidebarOpen] = useState(true); 
+
+  const [pivotConfig, setPivotConfig] = useState({
+    rowField: "", colField: "", valField: "", aggFunc: "count", showChart: true
+  });
 
   const [latField, setLatField] = useState(null);
   const [lngField, setLngField] = useState(null);
@@ -269,48 +356,94 @@ export default function Dashboard() {
   const [selectedColumn, setSelectedColumn] = useState("");
   const [activeSummaries, setActiveSummaries] = useState([]);
 
+  // --- 1. PREVENT ACCIDENTAL EXIT (Browser Warning) ---
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (data.length > 0) {
+        e.preventDefault();
+        e.returnValue = ""; // Legacy for some browsers
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [data.length]);
+
+  // --- 2. LOAD STATE FROM DISK (IndexedDB) ---
+  useEffect(() => {
+    const restoreSession = async () => {
+        try {
+            const savedData = await localforage.getItem("cenvi_dashboard_data");
+            const savedConfig = await localforage.getItem("cenvi_dashboard_config");
+            
+            if (savedData && savedData.length > 0) {
+                setData(savedData);
+                // If we have config, restore it. If not, rely on smart detection defaults later.
+                if (savedConfig) {
+                    setAllColumns(savedConfig.allColumns || []);
+                    setActiveColumns(savedConfig.activeColumns || []);
+                    setPivotConfig(savedConfig.pivotConfig || {});
+                    setActiveSummaries(savedConfig.activeSummaries || []);
+                    setLatField(savedConfig.latField);
+                    setLngField(savedConfig.lngField);
+                    setNameField(savedConfig.nameField);
+                }
+            }
+        } catch (err) {
+            console.error("Failed to restore session", err);
+        } finally {
+            setRestoring(false);
+        }
+    };
+    restoreSession();
+  }, []);
+
+  // --- 3. AUTO-SAVE STATE TO DISK ---
+  useEffect(() => {
+    if (!isRestoring && data.length > 0) {
+        localforage.setItem("cenvi_dashboard_data", data);
+        localforage.setItem("cenvi_dashboard_config", {
+            allColumns, activeColumns, pivotConfig, activeSummaries, latField, lngField, nameField
+        });
+    }
+  }, [data, allColumns, activeColumns, pivotConfig, activeSummaries, latField, lngField, nameField, isRestoring]);
+
+  // --- RESET / CLEAR DATA FUNCTION ---
+  const handleResetProject = async () => {
+     const confirmReset = window.confirm("Are you sure you want to clear all data and start over? This cannot be undone.");
+     if (confirmReset) {
+         await localforage.clear();
+         setData([]);
+         setActiveSummaries([]);
+         setActiveColumns([]);
+         setAllColumns([]);
+         window.location.reload(); // Cleanest way to reset all states
+     }
+  };
+
+  // --- DATA LOADING & PARSING ---
   const detectFields = (cols) => {
     const lowerCols = cols.map((c) => ({ original: c, lower: c.toLowerCase() }));
-    
     const lat = lowerCols.find(c => c.lower.includes("latitude") || c.lower === "lat" || c.lower.includes("_lat"))?.original;
     const lng = lowerCols.find(c => c.lower.includes("longitude") || c.lower === "lng" || c.lower === "lon" || c.lower.includes("_lon"))?.original;
-    
-    const name = lowerCols.find(c => c.lower.includes("last name"))?.original || 
-                 lowerCols.find(c => c.lower.includes("surname"))?.original ||
-                 lowerCols.find(c => c.lower.includes("household head"))?.original ||
-                 lowerCols.find(c => c.lower.includes("name"))?.original ||
-                 cols[0];
-
+    const name = lowerCols.find(c => c.lower.includes("last name"))?.original || lowerCols.find(c => c.lower.includes("surname"))?.original || lowerCols.find(c => c.lower.includes("household head"))?.original || cols[0];
     return { lat, lng, name };
   };
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const binaryStr = evt.target.result;
-      const workbook = XLSX.read(binaryStr, { type: "binary" });
-      const mainSheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(mainSheet);
-
+      const workbook = XLSX.read(evt.target.result, { type: "binary" });
+      const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
       if (jsonData.length > 0) {
         setData(jsonData);
         setActiveSummaries([]);
-        
         const cols = Object.keys(jsonData[0]);
         setAllColumns(cols);
-        
-        // Smart Default Selection
-        const smartDefaults = cols.filter(c => 
-          !c.startsWith("_") && 
-          !["start", "end", "deviceid", "simserial"].includes(c.toLowerCase())
-        );
-        
+        const smartDefaults = cols.filter(c => !c.startsWith("_") && !["start", "end", "deviceid"].includes(c.toLowerCase()));
         setActiveColumns(smartDefaults);
         setShowConfig(true); 
-        
         const { lat, lng, name } = detectFields(cols);
         setLatField(lat);
         setLngField(lng);
@@ -321,17 +454,8 @@ export default function Dashboard() {
     e.target.value = null; 
   };
 
-  const handleConfigSave = (selected) => {
-    setActiveColumns(selected);
-    setShowConfig(false);
-  };
-
-  const handleConfigCancel = () => {
-    if (activeColumns.length === 0) {
-        setData([]);
-    }
-    setShowConfig(false);
-  };
+  const handleConfigSave = (selected) => { setActiveColumns(selected); setShowConfig(false); };
+  const handleConfigCancel = () => { if (activeColumns.length === 0) setData([]); setShowConfig(false); };
 
   const addSummaryCard = () => {
     if (selectedColumn && !activeSummaries.find((c) => c.name === selectedColumn)) {
@@ -341,166 +465,154 @@ export default function Dashboard() {
     }
   };
 
-  const removeSummaryCard = (column) => {
-    setActiveSummaries(activeSummaries.filter((c) => c.name !== column));
-  };
-
-  const toggleSize = (column) => {
-    setActiveSummaries(activeSummaries.map((c) => c.name === column ? { ...c, size: c.size === "half" ? "full" : "half" } : c));
-  };
+  const removeSummaryCard = (column) => { setActiveSummaries(activeSummaries.filter((c) => c.name !== column)); };
+  const toggleSize = (column) => { setActiveSummaries(activeSummaries.map((c) => c.name === column ? { ...c, size: c.size === "half" ? "full" : "half" } : c)); };
 
   const validPoints = useMemo(() => {
     if (!latField || !lngField) return [];
-    return data
-      .map((row) => ({
-        lat: parseFloat(row[latField]),
-        lng: parseFloat(row[lngField]),
-        row: row,
-      }))
-      .filter((pt) => !isNaN(pt.lat) && !isNaN(pt.lng));
+    return data.map((row) => ({ lat: parseFloat(row[latField]), lng: parseFloat(row[lngField]), row: row })).filter((pt) => !isNaN(pt.lat) && !isNaN(pt.lng));
   }, [data, latField, lngField]);
+
+  if (isRestoring) {
+     return (
+        <div className="flex h-screen items-center justify-center bg-gray-50 flex-col gap-4">
+             <Loader2 className="animate-spin text-[#3a5a40]" size={48} />
+             <p className="text-gray-500 font-medium">Restoring your session...</p>
+        </div>
+     );
+  }
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden pt-24">
-      
-      {/* CONFIG MODAL */}
-      {showConfig && (
-        <ColumnConfigurator 
-            allColumns={allColumns} 
-            selectedColumns={activeColumns} 
-            onSave={handleConfigSave}
-            onCancel={handleConfigCancel}
-        />
-      )}
+      {showConfig && <ColumnConfigurator allColumns={allColumns} selectedColumns={activeColumns} onSave={handleConfigSave} onCancel={handleConfigCancel} />}
 
       {/* SIDEBAR */}
-      <div className="w-1/3 min-w-[350px] max-w-[500px] flex flex-col border-r border-gray-200 bg-white h-full shadow-lg z-10">
-        <div className="p-6 border-b bg-white z-20">
-          <div className="flex justify-between items-start mb-4">
-             <h1 className="text-2xl font-bold text-[#344E41] flex items-center gap-2">
-                <FileSpreadsheet /> CENVI Dashboard
-             </h1>
-             {data.length > 0 && (
-                <button 
-                  onClick={() => setShowConfig(true)}
-                  className="p-2 text-gray-500 hover:text-[#3a5a40] hover:bg-gray-100 rounded-full transition"
-                  title="Configure Columns"
-                >
-                    <Settings size={20} />
-                </button>
-             )}
+      {isSidebarOpen && (
+        <div className="w-1/3 min-w-[350px] max-w-[500px] flex flex-col border-r border-gray-200 bg-white h-full shadow-lg z-20 transition-all duration-300">
+          <div className="p-6 border-b bg-white z-20">
+            <div className="flex justify-between items-start mb-4">
+              <h1 className="text-2xl font-bold text-[#344E41] flex items-center gap-2"><FileSpreadsheet /> CENVI Dashboard</h1>
+              {data.length > 0 && (
+                  <div className="flex gap-2">
+                     <button onClick={handleResetProject} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-full transition" title="Clear All Data"><RotateCcw size={20} /></button>
+                     <button onClick={() => setShowConfig(true)} className="p-2 text-gray-500 hover:text-[#3a5a40] hover:bg-gray-100 rounded-full transition" title="Configure Columns"><Settings size={20} /></button>
+                  </div>
+              )}
+            </div>
+            <div className="relative group">
+              <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+              <button className="w-full py-3 border-2 border-dashed border-[#3a5a40] text-[#3a5a40] bg-green-50 rounded-xl flex items-center justify-center gap-2 group-hover:bg-[#3a5a40] group-hover:text-white transition-colors font-medium">
+                <Upload size={18} /> {data.length > 0 ? "Upload Different File" : "Upload Excel File"}
+              </button>
+            </div>
           </div>
-          
-          <div className="relative group">
-            <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
-            <button className="w-full py-3 border-2 border-dashed border-[#3a5a40] text-[#3a5a40] bg-green-50 rounded-xl flex items-center justify-center gap-2 group-hover:bg-[#3a5a40] group-hover:text-white transition-colors font-medium">
-              <Upload size={18} />
-              {data.length > 0 ? "Upload Different File" : "Upload Excel File"}
-            </button>
-          </div>
-        </div>
 
-        {data.length > 0 && (
-          <div className="p-4 border-b bg-gray-50 flex gap-2">
-            <select value={selectedColumn} onChange={(e) => setSelectedColumn(e.target.value)} className="flex-1 border-gray-300 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#3a5a40] outline-none">
-              <option value="">Select a column to analyze...</option>
-              {activeColumns.map((col) => (
-                <option key={col} value={col}>{col}</option>
-              ))}
-            </select>
-            <button onClick={addSummaryCard} disabled={!selectedColumn} className="bg-[#3a5a40] text-white p-2 rounded-lg hover:bg-[#344E41] disabled:opacity-50 disabled:cursor-not-allowed transition">
-              <Plus size={20} />
-            </button>
-          </div>
-        )}
-
-        <div className="flex-1 overflow-y-auto p-4 bg-gray-100 scrollbar-thin">
-          <Reorder.Group axis="y" values={activeSummaries} onReorder={setActiveSummaries} className="space-y-4">
-            <AnimatePresence>
-              {activeSummaries.map((item) => (
-                <SummaryCard key={item.name} item={item} data={data} onRemove={removeSummaryCard} onResize={toggleSize} />
-              ))}
-            </AnimatePresence>
-          </Reorder.Group>
-          {activeSummaries.length === 0 && data.length > 0 && (
-             <div className="text-center text-gray-400 mt-10 px-6">
-                <Info className="mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Select a column above (e.g., 'Wall Material') to create a summary card.</p>
-                <p className="text-xs mt-2 text-gray-500">Missing columns? Click the gear icon <Settings size={12} className="inline"/> to clean your data.</p>
-             </div>
+          {data.length > 0 && (
+            <div className="p-4 border-b bg-gray-50 flex gap-2">
+              <select value={selectedColumn} onChange={(e) => setSelectedColumn(e.target.value)} className="flex-1 border-gray-300 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#3a5a40] outline-none">
+                <option value="">Select a column to analyze...</option>
+                {activeColumns.map((col) => <option key={col} value={col}>{col}</option>)}
+              </select>
+              <button onClick={addSummaryCard} disabled={!selectedColumn} className="bg-[#3a5a40] text-white p-2 rounded-lg hover:bg-[#344E41] disabled:opacity-50 disabled:cursor-not-allowed transition"><Plus size={20} /></button>
+            </div>
           )}
-        </div>
-      </div>
 
-      {/* MAP AREA */}
-      <div className="flex-1 relative bg-gray-200">
-        {data.length > 0 ? (
-          <MapContainer center={[10.3157, 123.8854]} zoom={11} style={{ height: "100%", width: "100%" }} className="z-0">
-            <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            
-            {validPoints.length > 0 ? (
-              <>
-                <FitBounds points={validPoints.map(p => [p.lat, p.lng])} />
-                
-                {/* CLUSTER GROUP with Custom Icon */}
-                <MarkerClusterGroup 
-                  chunkedLoading
-                  iconCreateFunction={createClusterCustomIcon} // <--- Added here
-                >
-                  {validPoints.map((pt, index) => (
-                    <Marker key={index} position={[pt.lat, pt.lng]}>
-                      <Popup minWidth={250}>
-                        <div className="bg-[#3a5a40] text-white p-3 -mx-4 -mt-3 rounded-t-md mb-2 shadow-sm">
-                          <strong className="text-sm block font-bold">
-                            {pt.row[nameField] || "Household Data"}
-                          </strong>
-                          <span className="text-[10px] opacity-80 uppercase tracking-wider">Respondent #{index + 1}</span>
-                        </div>
-
-                        {activeSummaries.length > 0 ? (
-                          <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                            {activeSummaries.map((summary) => (
-                              <div key={summary.name} className="flex justify-between items-center border-b border-gray-100 pb-1 last:border-0 hover:bg-gray-50 p-1 rounded">
-                                 <div className="flex items-center gap-2 overflow-hidden">
-                                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: summary.color }}></div>
-                                    <span className="text-[11px] text-gray-500 uppercase font-semibold truncate max-w-[100px]" title={summary.name}>{summary.name}</span>
-                                 </div>
-                                 <span className="text-sm text-gray-800 font-medium text-right ml-2 truncate max-w-[120px]" title={pt.row[summary.name]}>
-                                   {pt.row[summary.name] !== undefined ? String(pt.row[summary.name]) : <span className="text-gray-300">-</span>}
-                                 </span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="space-y-1">
-                             <div className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Preview (Selected Columns)</div>
-                             {activeColumns.slice(0, 5).map(col => (
-                                <div key={col} className="flex justify-between text-xs border-b border-gray-50 pb-1">
-                                  <span className="text-gray-500 truncate w-1/2" title={col}>{col}:</span>
-                                  <span className="font-medium truncate w-1/2 text-right">{pt.row[col] || "-"}</span>
-                                </div>
-                             ))}
-                          </div>
-                        )}
-                      </Popup>
-                    </Marker>
-                  ))}
-                </MarkerClusterGroup>
-                
-              </>
-            ) : (
-               <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-xl z-[999] flex items-center gap-2 text-red-600 border border-red-200">
-                  <MapPin size={18} />
-                  <span className="font-medium">No GPS Coordinates found</span>
-               </div>
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-100 scrollbar-thin">
+            <Reorder.Group axis="y" values={activeSummaries} onReorder={setActiveSummaries} className="space-y-4">
+              <AnimatePresence>
+                {activeSummaries.map((item) => <SummaryCard key={item.name} item={item} data={data} onRemove={removeSummaryCard} onResize={toggleSize} />)}
+              </AnimatePresence>
+            </Reorder.Group>
+            {activeSummaries.length === 0 && data.length > 0 && (
+              <div className="text-center text-gray-400 mt-10 px-6">
+                  <Info className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Select a column above to create a summary card.</p>
+              </div>
             )}
-          </MapContainer>
-        ) : (
-          <div className="h-full flex flex-col items-center justify-center text-gray-400">
-            <div className="bg-gray-100 p-8 rounded-full mb-4"><MapPin size={64} className="opacity-20" /></div>
-            <p className="text-lg font-medium">Map Visualization Area</p>
           </div>
+        </div>
+      )}
+
+      {/* MAIN CONTENT AREA */}
+      <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 relative">
+        {data.length > 0 && (
+            <div className="px-6 py-2 bg-white border-b flex items-center justify-between z-10 shadow-sm">
+                <div className="flex items-center gap-4">
+                    {/* SIDEBAR TOGGLE */}
+                    <button 
+                        onClick={() => setSidebarOpen(!isSidebarOpen)}
+                        className="p-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-600 transition"
+                        title={isSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}
+                    >
+                        {isSidebarOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+                    </button>
+                    
+                    <div className="flex bg-gray-100 p-1 rounded-lg">
+                        <button onClick={() => setViewMode("map")} className={`px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all ${viewMode === "map" ? "bg-white text-[#344E41] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                            <MapPin size={16}/> Map
+                        </button>
+                        <button onClick={() => setViewMode("pivot")} className={`px-4 py-1.5 rounded-md text-sm font-medium flex items-center gap-2 transition-all ${viewMode === "pivot" ? "bg-white text-[#344E41] shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                            <Table size={16}/> Pivot Table
+                        </button>
+                    </div>
+                </div>
+            </div>
         )}
+
+        <div className="flex-1 relative overflow-hidden">
+            {viewMode === "pivot" ? (
+                <PivotView data={data} columns={activeColumns} config={pivotConfig} setConfig={setPivotConfig} />
+            ) : (
+                <div className="w-full h-full relative">
+                    {data.length > 0 ? (
+                    <MapContainer center={[10.3157, 123.8854]} zoom={11} style={{ height: "100%", width: "100%" }} className="z-0">
+                        <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        {validPoints.length > 0 ? (
+                        <>
+                            <FitBounds points={validPoints.map(p => [p.lat, p.lng])} />
+                            <MarkerClusterGroup chunkedLoading iconCreateFunction={createClusterCustomIcon}>
+                            {validPoints.map((pt, index) => (
+                                <Marker key={index} position={[pt.lat, pt.lng]}>
+                                <Popup minWidth={250}>
+                                    <div className="bg-[#3a5a40] text-white p-3 -mx-4 -mt-3 rounded-t-md mb-2 shadow-sm">
+                                    <strong className="text-sm block font-bold">{pt.row[nameField] || "Household Data"}</strong>
+                                    <span className="text-[10px] opacity-80 uppercase tracking-wider">Respondent #{index + 1}</span>
+                                    </div>
+                                    {activeSummaries.length > 0 ? (
+                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                                        {activeSummaries.map((summary) => (
+                                        <div key={summary.name} className="flex justify-between items-center border-b border-gray-100 pb-1 last:border-0 hover:bg-gray-50 p-1 rounded">
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: summary.color }}></div>
+                                                <span className="text-[11px] text-gray-500 uppercase font-semibold truncate max-w-[100px]" title={summary.name}>{summary.name}</span>
+                                            </div>
+                                            <span className="text-sm text-gray-800 font-medium text-right ml-2 truncate max-w-[120px]" title={pt.row[summary.name]}>{pt.row[summary.name] !== undefined ? String(pt.row[summary.name]) : <span className="text-gray-300">-</span>}</span>
+                                        </div>
+                                        ))}
+                                    </div>
+                                    ) : (
+                                    <div className="space-y-1">
+                                        <div className="text-[10px] text-gray-400 uppercase font-semibold mb-1">Preview</div>
+                                        {activeColumns.slice(0, 5).map(col => (
+                                            <div key={col} className="flex justify-between text-xs border-b border-gray-50 pb-1"><span className="text-gray-500 truncate w-1/2" title={col}>{col}:</span><span className="font-medium truncate w-1/2 text-right">{pt.row[col] || "-"}</span></div>
+                                        ))}
+                                    </div>
+                                    )}
+                                </Popup>
+                                </Marker>
+                            ))}
+                            </MarkerClusterGroup>
+                        </>
+                        ) : (
+                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-xl z-[999] flex items-center gap-2 text-red-600 border border-red-200"><MapPin size={18} /><span className="font-medium">No GPS Coordinates found</span></div>
+                        )}
+                    </MapContainer>
+                    ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-gray-400"><div className="bg-gray-100 p-8 rounded-full mb-4"><MapPin size={64} className="opacity-20" /></div><p className="text-lg font-medium">Map Visualization Area</p></div>
+                    )}
+                </div>
+            )}
+        </div>
       </div>
     </div>
   );
