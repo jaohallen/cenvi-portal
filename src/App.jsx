@@ -10,7 +10,6 @@ import Services from "./pages/Services";
 import Collaborators from "./pages/Collaborators";
 import Resources from "./pages/Resources";
 import Contact from "./pages/Contact";
-import WebMap from "./pages/WebMap";
 import Datasets from "./pages/Datasets";
 import Dashboard from "./pages/Dashboard";
 
@@ -23,14 +22,13 @@ function App() {
         <Navbar />
         <main className="flex-grow bg-gray-50">
           <Routes>
-            {/* Single-page (main site) */}
             <Route
               path="/"
               element={
                 <>
                   <section id="home"><Home /></section>
                   <section id="about"><About /></section>
-                  <section id="about"><Research_Projects /></section>
+                  <section id="projects"><Research_Projects /></section>
                   <section id="services"><Services /></section>
                   <section id="collaborators"><Collaborators /></section>
                   <section id="resources"><Resources /></section>
@@ -39,7 +37,6 @@ function App() {
               }
             />
 
-            {/* Separate Web Map page */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/datasets" element={<Datasets />} />
             <Route path="/projectdetails" element={<ProjectDetails />} />
