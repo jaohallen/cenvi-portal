@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo, useRef } from "react"; // Added useRef
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
-import { Reorder, AnimatePresence } from "framer-motion";
-import { toPng } from 'html-to-image'; // Added for chart export
+import { Reorder, AnimatePresence, motion } from "framer-motion"; // Added motion import
+import { toPng } from 'html-to-image';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
 } from "recharts";
@@ -12,7 +12,7 @@ import {
   FileSpreadsheet, GripVertical, Info, Settings, 
   CheckSquare, Square, Search, Save, Table, 
   PanelLeftClose, PanelLeftOpen, RotateCcw, Loader2, 
-  Image as ImageIcon // Added ImageIcon
+  Image as ImageIcon 
 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -36,7 +36,6 @@ const SYMBOLOGY_COLORS = [
 ];
 
 // --- Helper Components ---
-
 function FitBounds({ points }) {
   const map = useMap();
   useEffect(() => {
@@ -126,73 +125,31 @@ const PivotBlock = ({ id, data, columns, config, setConfig, onRemove, canRemove 
     return { pivotData: { sortedRows, sortedCols, resultMatrix, maxCellVal }, chartData: cData };
   }, [data, rowField, colField, valField, aggFunc]);
 
-  // --- EXPORT FUNCTIONS ---
   const handleXlsxExport = () => {
-    // 1. Validation: Ensure a Row is selected
-    if (!rowField) {
-      alert("Please select a 'Row' field before exporting.");
-      return;
-    }
-
-    // 2. Validation: Ensure Value Field is selected for aggregations other than 'count'
-    if (aggFunc !== 'count' && !valField) {
-      alert(`Please select a 'Value Field' to calculate the ${aggFunc}.`);
-      return;
-    }
-
+    if (!rowField) { alert("Please select a 'Row' field before exporting."); return; }
+    if (aggFunc !== 'count' && !valField) { alert(`Please select a 'Value Field' to calculate the ${aggFunc}.`); return; }
     if (!pivotData) return;
-
-    // 3. Dynamic Filename Logic: Row name only if no column is selected
-    const baseName = colField 
-      ? `CENVI_${rowField}_vs_${colField}` 
-      : `CENVI_${rowField}`;
+    const baseName = colField ? `CENVI_${rowField}_vs_${colField}` : `CENVI_${rowField}`;
     const fileName = `${baseName}.xlsx`.replace(/\s+/g, '_');
-
-    const analysisRows = [
-      [rowField, ...pivotData.sortedCols],
-      ...pivotData.sortedRows.map(r => [
-        r, 
-        ...pivotData.sortedCols.map(c => pivotData.resultMatrix[r][c])
-      ])
-    ];
-
+    const analysisRows = [ [rowField, ...pivotData.sortedCols], ...pivotData.sortedRows.map(r => [ r, ...pivotData.sortedCols.map(c => pivotData.resultMatrix[r][c]) ]) ];
     const wb = XLSX.utils.book_new();
     const wsAnalysis = XLSX.utils.aoa_to_sheet(analysisRows);
     XLSX.utils.book_append_sheet(wb, wsAnalysis, "Pivot Analysis");
-
     const wsDataset = XLSX.utils.json_to_sheet(data);
     XLSX.utils.book_append_sheet(wb, wsDataset, "Source Dataset");
-
     XLSX.writeFile(wb, fileName);
   };
 
   const handleImageExport = async () => {
-    // 1. Validation: Ensure a Row is selected
-    if (!rowField) {
-      alert("Please select a 'Row' field to generate a chart for export.");
-      return;
-    }
-
+    if (!rowField) { alert("Please select a 'Row' field to generate a chart for export."); return; }
     if (!chartRef.current) return;
-    
-    // 2. Dynamic Filename Logic: Row name only if no column is selected
-    const baseName = colField 
-      ? `Chart_${rowField}_by_${colField}` 
-      : `Chart_${rowField}`;
+    const baseName = colField ? `Chart_${rowField}_by_${colField}` : `Chart_${rowField}`;
     const fileName = `${baseName}.png`.replace(/\s+/g, '_');
-
     try {
-      const dataUrl = await toPng(chartRef.current, { 
-        backgroundColor: '#ffffff', 
-        padding: 20 
-      });
+      const dataUrl = await toPng(chartRef.current, { backgroundColor: '#ffffff', padding: 20 });
       const link = document.createElement('a');
-      link.download = fileName;
-      link.href = dataUrl;
-      link.click();
-    } catch (err) {
-      console.error("Image export failed", err);
-    }
+      link.download = fileName; link.href = dataUrl; link.click();
+    } catch (err) { console.error("Image export failed", err); }
   };
 
   const getCellColor = (val, max) => {
@@ -213,8 +170,6 @@ const PivotBlock = ({ id, data, columns, config, setConfig, onRemove, canRemove 
             <X size={20} />
           </button>
         )}
-        
-        {/* RE-ADDED CONFIGURATION CONTROLS */}
         <div className="flex flex-col gap-1 w-40">
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Rows (Categories)</label>
           <select value={rowField} onChange={e => updateConfig("rowField", e.target.value)} className="border rounded-md px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-[#3a5a40]">
@@ -222,7 +177,6 @@ const PivotBlock = ({ id, data, columns, config, setConfig, onRemove, canRemove 
             {columns.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-
         <div className="flex flex-col gap-1 w-40">
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Columns (Optional)</label>
           <select value={colField} onChange={e => updateConfig("colField", e.target.value)} className="border rounded-md px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-[#3a5a40]">
@@ -230,7 +184,6 @@ const PivotBlock = ({ id, data, columns, config, setConfig, onRemove, canRemove 
             {columns.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
-
         <div className="flex flex-col gap-1 w-32">
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Agg Method</label>
           <select value={aggFunc} onChange={e => updateConfig("aggFunc", e.target.value)} className="border rounded-md px-2 py-1 text-sm outline-none focus:ring-2 focus:ring-[#3a5a40]">
@@ -241,7 +194,6 @@ const PivotBlock = ({ id, data, columns, config, setConfig, onRemove, canRemove 
             <option value="max">Max</option>
           </select>
         </div>
-
         {aggFunc !== 'count' && (
           <div className="flex flex-col gap-1 w-40">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Value Field</label>
@@ -251,8 +203,6 @@ const PivotBlock = ({ id, data, columns, config, setConfig, onRemove, canRemove 
             </select>
           </div>
         )}
-
-        {/* Export Controls */}
         <div className="flex gap-2 ml-auto">
           <button onClick={handleXlsxExport} disabled={!pivotData} className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded text-xs font-bold text-gray-600 hover:bg-gray-50 disabled:opacity-50">
             <FileSpreadsheet size={14} className="text-green-600" /> Save XLSX
@@ -267,7 +217,6 @@ const PivotBlock = ({ id, data, columns, config, setConfig, onRemove, canRemove 
           </button>
         </div>
       </div>
-
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {showChart && pivotData && (
           <div ref={chartRef} className="w-full md:w-1/3 p-4 border-r bg-white">
@@ -456,6 +405,7 @@ export default function Dashboard() {
   const [nameField, setNameField] = useState(null);
   const [selectedColumn, setSelectedColumn] = useState("");
   const [activeSummaries, setActiveSummaries] = useState([]);
+  const [selectedHousehold, setSelectedHousehold] = useState(null);
 
   useEffect(() => {
     const handleBeforeUnload = (e) => { if (data.length > 0) { e.preventDefault(); e.returnValue = ""; } };
@@ -520,16 +470,32 @@ export default function Dashboard() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       const workbook = XLSX.read(evt.target.result, { type: "binary" });
-      const jsonData = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-      if (jsonData.length > 0) {
-        setData(jsonData);
-        setActiveSummaries([]);
-        const cols = Object.keys(jsonData[0]);
-        setAllColumns(cols);
-        const smartDefaults = cols.filter(c => !c.startsWith("_") && !["start", "end", "deviceid"].includes(c.toLowerCase()));
-        setActiveColumns(smartDefaults);
+      const cleanStr = (str) => !str ? "" : String(str).replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+      const sheet1OriginalName = workbook.SheetNames[0];
+      const households = XLSX.utils.sheet_to_json(workbook.Sheets[sheet1OriginalName]);
+      const familyMembers = workbook.SheetNames[1] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[1]]) : [];
+      const cleanSheet1Name = cleanStr(sheet1OriginalName);
+      const familyMap = {};
+      familyMembers.forEach(member => {
+        const cleanParentRef = cleanStr(member._parent_table_name);
+        if (cleanParentRef === cleanSheet1Name) {
+          const pIdx = member._parent_index;
+          if (!familyMap[pIdx]) familyMap[pIdx] = [];
+          familyMap[pIdx].push(member);
+        }
+      });
+      const enrichedData = households.map(h => ({ ...h, _familyMembers: familyMap[h._index] || [] }));
+      if (enrichedData.length > 0) {
+        setData(enrichedData);
+        const defaultHouseholdCols = [ "First Name", "Middle Name", "Last Name", "Sex at birth", "Age", "Civil Status", "Religion", "Other", "Member of the labor force:", "Educational Attainment", "Contact Number", "Do you live alone", "Number of families", "Member of People's Organization", "Household monthly income" ];
+        const allCols = Object.keys(households[0]);
+        setAllColumns(allCols);
+        const existingDefaults = defaultHouseholdCols.filter(col => allCols.includes(col));
+        setActiveColumns(allCols); 
+        const initialSummaries = existingDefaults.map((col, idx) => ({ name: col, color: SYMBOLOGY_COLORS[idx % SYMBOLOGY_COLORS.length] }));
+        setActiveSummaries(initialSummaries);
         setShowConfig(true); 
-        const { lat, lng, name } = detectFields(cols);
+        const { lat, lng, name } = detectFields(allCols);
         setLatField(lat); setLngField(lng); setNameField(name);
       }
     };
@@ -622,49 +588,146 @@ export default function Dashboard() {
             </div>
         )}
         <div className="flex-1 relative overflow-hidden">
-            {viewMode === "pivot" ? (
-                <PivotView data={data} columns={activeColumns} configs={pivotConfigs} setConfigs={setPivotConfigs} />
-            ) : (
-                <div className="w-full h-full relative">
-                    {data.length > 0 ? (
-                    <MapContainer center={[10.3157, 123.8854]} zoom={11} style={{ height: "100%", width: "100%" }} className="z-0">
-                        <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                        {validPoints.length > 0 ? (
-                        <>
-                            <FitBounds points={validPoints.map(p => [p.lat, p.lng])} />
-                            <MarkerClusterGroup chunkedLoading iconCreateFunction={createClusterCustomIcon}>
-                            {validPoints.map((pt, index) => (
-                                <Marker key={index} position={[pt.lat, pt.lng]}>
-                                <Popup minWidth={250}>
-                                    <div className="bg-[#3a5a40] text-white p-3 -mx-4 -mt-3 rounded-t-md mb-2 shadow-sm">
-                                    <strong className="text-sm block font-bold">{pt.row[nameField] || "Household Data"}</strong>
-                                    <span className="text-[10px] opacity-80 uppercase tracking-wider">Respondent #{index + 1}</span>
-                                    </div>
-                                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                                        {activeSummaries.map((summary) => (
-                                        <div key={summary.name} className="flex justify-between items-center border-b border-gray-100 pb-1 last:border-0 hover:bg-gray-50 p-1 rounded">
-                                            <div className="flex items-center gap-2 overflow-hidden">
-                                                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: summary.color }}></div>
-                                                <span className="text-[11px] text-gray-500 uppercase font-semibold truncate max-w-[100px]" title={summary.name}>{summary.name}</span>
-                                            </div>
-                                            <span className="text-sm text-gray-800 font-medium text-right ml-2 truncate max-w-[120px]">{pt.row[summary.name] !== undefined ? String(pt.row[summary.name]) : <span className="text-gray-300">-</span>}</span>
-                                        </div>
-                                        ))}
-                                    </div>
-                                </Popup>
-                                </Marker>
-                            ))}
-                            </MarkerClusterGroup>
-                        </>
-                        ) : (
-                        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-xl z-[999] flex items-center gap-2 text-red-600 border border-red-200"><MapPin size={18} /><span className="font-medium">No GPS Coordinates found</span></div>
-                        )}
-                    </MapContainer>
-                    ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-400"><div className="bg-gray-100 p-8 rounded-full mb-4"><MapPin size={64} className="opacity-20" /></div><p className="text-lg font-medium">Map Visualization Area</p></div>
-                    )}
-                </div>
-            )}
+          {viewMode === "pivot" ? (
+              <PivotView data={data} columns={activeColumns} configs={pivotConfigs} setConfigs={setPivotConfigs} />
+          ) : (
+              <div className="w-full h-full relative">
+                  {data.length > 0 ? (
+                      <>
+                      <MapContainer center={[10.3157, 123.8854]} zoom={11} style={{ height: "100%", width: "100%" }} className="z-0">
+                          <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          {validPoints.length > 0 ? (
+                              <>
+                                  <FitBounds points={validPoints.map(p => [p.lat, p.lng])} />
+                                  <MarkerClusterGroup chunkedLoading iconCreateFunction={createClusterCustomIcon}>
+                                      {validPoints.map((pt, index) => (
+                                          <Marker 
+                                              key={index} 
+                                              position={[pt.lat, pt.lng]}
+                                              eventHandlers={{
+                                                  click: () => setSelectedHousehold(pt.row),
+                                              }}
+                                          />
+                                      ))}
+                                  </MarkerClusterGroup>
+                              </>
+                          ) : (
+                              <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-xl z-[999] flex items-center gap-2 text-red-600 border border-red-200">
+                                  <MapPin size={18} /><span className="font-medium">No GPS Coordinates found</span>
+                              </div>
+                          )}
+                      </MapContainer>
+
+                      {/* MODAL OVERLAY */}
+                      <AnimatePresence>
+                          {selectedHousehold && (
+                              <div 
+                                  className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+                                  onClick={() => setSelectedHousehold(null)} // Close when clicking the background
+                              >
+                                  <motion.div 
+                                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                                      exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                                      onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
+                                      className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[85vh] overflow-hidden flex flex-col"
+                                  >
+                                      {/* Fixed Header */}
+                                      <div className="bg-[#3a5a40] p-6 text-white flex justify-between items-center shrink-0 shadow-md">
+                                          <div>
+                                              <h2 className="text-2xl font-bold">
+                                                  {`${selectedHousehold["First Name"] || ""} ${selectedHousehold["Last Name"] || ""}`.trim() || "Household Head"}
+                                              </h2>
+                                              <p className="text-green-100 text-[10px] uppercase tracking-widest mt-1 font-bold">Household Information System</p>
+                                          </div>
+                                          <button onClick={() => setSelectedHousehold(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
+                                              <X size={28} />
+                                          </button>
+                                      </div>
+
+                                      {/* Modal Content */}
+                                      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+                                          
+                                          {/* LEFT: Household Details */}
+                                          <div className="w-full lg:w-1/3 flex flex-col bg-gray-50 border-r border-gray-200">
+                                              <div className="px-6 lg:px-8 pt-1 bg-gray-50">
+                                                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1 mb-0">
+                                                      Household Details
+                                                  </h3>
+                                              </div>
+                                              
+                                              <div className="flex-1 overflow-y-auto p-6 lg:p-8 pt-2 custom-scrollbar">
+                                                  <div className="space-y-2">
+                                                      {activeSummaries.map((summary) => (
+                                                          <div key={summary.name} className="flex flex-col border-b border-gray-200 pb-2">
+                                                              <span className="text-[10px] text-[#3a5a40] font-bold uppercase">{summary.name}</span>
+                                                              <span className="text-sm text-gray-800 font-medium">
+                                                                  {selectedHousehold[summary.name] !== undefined ? String(selectedHousehold[summary.name]) : "-"}
+                                                              </span>
+                                                          </div>
+                                                      ))}
+                                                  </div>
+                                              </div>
+                                          </div>
+
+                                          {/* RIGHT: Family Members */}
+                                          <div className="w-full lg:w-2/3 flex flex-col bg-white">
+                                              <div className="px-6 lg:px-8 pt-1 bg-white z-10">
+                                                  <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-200 pb-1 mb-0">
+                                                      Family Members ({selectedHousehold._familyMembers?.length || 0})
+                                                  </h3>
+                                              </div>
+
+                                              <div className="flex-1 overflow-y-auto p-6 lg:p-8 pt-0 custom-scrollbar">
+                                                  <div className="flex flex-col space-y-0">
+                                                      {selectedHousehold._familyMembers?.length > 0 ? (
+                                                          selectedHousehold._familyMembers.map((member, i) => (
+                                                              <div key={i} className="bg-white py-5 border-b border-gray-100 hover:bg-gray-50 transition-all last:border-b-0">
+                                                                  <div className="font-bold text-[#3a5a40] mb-3 text-base flex justify-between">
+                                                                      <span>{`${member["First Name"] || ""} ${member["Last Name"] || ""}`.trim() || `Member ${i+1}`}</span>
+                                                                      <span className="text-[10px] text-gray-400 font-normal uppercase tracking-tighter">MEMBER #{i+1}</span>
+                                                                  </div>
+                                                                  <div className="grid grid-cols-1 gap-y-1">
+                                                                      {Object.entries(member).map(([key, val]) => {
+                                                                          if (key.startsWith("_")) return null;
+                                                                          let dVal = val;
+                                                                          if (val === 1 || val === "1") dVal = <span className="text-green-600 font-bold italic">True</span>;
+                                                                          if (val === 0 || val === "0" || !val) return null;
+                                                                          
+                                                                          return (
+                                                                              <div key={key} className="flex justify-between items-start gap-4 pb-0.5">
+                                                                                  <span className="text-[10px] text-gray-400 font-bold uppercase w-1/2 leading-tight">{key}</span>
+                                                                                  <span className="text-[11px] text-gray-700 text-right w-1/2 font-medium leading-tight">{dVal}</span>
+                                                                              </div>
+                                                                          );
+                                                                      })}
+                                                                  </div>
+                                                              </div>
+                                                          ))
+                                                      ) : (
+                                                          <div className="flex flex-col items-center justify-center py-20 text-gray-400 italic">
+                                                              No family members found.
+                                                          </div>
+                                                      )}
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+                                  </motion.div>
+                              </div>
+                          )}
+                      </AnimatePresence>
+                      </>
+                  ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                          <div className="bg-gray-100 p-8 rounded-full mb-4">
+                              <MapPin size={64} className="opacity-20" />
+                          </div>
+                          <p className="text-lg font-medium">Map Visualization Area</p>
+                      </div>
+                  )}
+              </div>
+          )}
         </div>
       </div>
     </div>
