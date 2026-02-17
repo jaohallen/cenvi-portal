@@ -596,7 +596,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden pt-24">
+    <div className="flex h-screen bg-gray-50 overflow-hidden pt-20">
       {showConfig && <ColumnConfigurator allColumns={allColumns} selectedColumns={activeColumns} onSave={handleConfigSave} onCancel={handleConfigCancel} />}
       {isSidebarOpen && (
         <div className="w-1/3 min-w-[350px] max-w-[500px] flex flex-col border-r border-gray-200 bg-white h-full shadow-lg z-20 transition-all duration-300">
