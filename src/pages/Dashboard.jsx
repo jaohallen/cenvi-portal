@@ -407,6 +407,8 @@ export default function Dashboard() {
   const [activeSummaries, setActiveSummaries] = useState([]);
   const [selectedHousehold, setSelectedHousehold] = useState(null);
 
+  const [filters, setFilters] = useState([]); // Array of { column, operator, value }
+
   useEffect(() => {
     const handleBeforeUnload = (e) => { if (data.length > 0) { e.preventDefault(); e.returnValue = ""; } };
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -515,19 +517,83 @@ export default function Dashboard() {
   const removeSummaryCard = (column) => { setActiveSummaries(activeSummaries.filter((c) => c.name !== column)); };
   const toggleSize = (column) => { setActiveSummaries(activeSummaries.map((c) => c.name === column ? { ...c, size: c.size === "half" ? "full" : "half" } : c)); };
 
+  const getUniqueValues = (columnName) => {
+    if (!columnName || !data.length) return [];
+    const values = data.map(row => String(row[columnName] || ""));
+    return [...new Set(values)].filter(val => val.trim() !== "").sort();
+  };
+
+  const filteredData = useMemo(() => {
+    if (filters.length === 0) return data;
+
+    return data.filter((row) => {
+      return filters.every((f) => {
+        if (!f.column) return true;
+        
+        if (!f.value || f.value.trim() === "") return true; 
+
+        const cellValue = String(row[f.column] || "").toLowerCase();
+        const filterValue = f.value.toLowerCase();
+
+        switch (f.operator) {
+          case "equals": return cellValue === filterValue;
+          case "contains": return cellValue.includes(filterValue);
+          case "starts_with": return cellValue.startsWith(filterValue);
+          default: return true;
+        }
+      });
+    });
+  }, [data, filters]);
+
   const validPoints = useMemo(() => {
     if (!latField || !lngField) return [];
-    return data.map((row) => ({ lat: parseFloat(row[latField]), lng: parseFloat(row[lngField]), row: row })).filter((pt) => !isNaN(pt.lat) && !isNaN(pt.lng));
-  }, [data, latField, lngField]);
+    return filteredData.map((row) => ({ 
+      lat: parseFloat(row[latField]), 
+      lng: parseFloat(row[lngField]), 
+      row: row 
+    })).filter((pt) => !isNaN(pt.lat) && !isNaN(pt.lng));
+  }, [filteredData, latField, lngField]);
 
-  if (isRestoring) {
-     return (
-        <div className="flex h-screen items-center justify-center bg-gray-50 flex-col gap-4">
-             <Loader2 className="animate-spin text-[#3a5a40]" size={48} />
-             <p className="text-gray-500 font-medium">Restoring your session...</p>
-        </div>
-     );
-  }
+  const handleDownloadFiltered = () => {
+    if (filteredData.length === 0) return;
+
+    const workbook = XLSX.utils.book_new();
+
+    // --- SHEET 1: Households ---
+    // Clean internal keys for the main sheet
+    const householdExport = filteredData.map(row => {
+      const { _familyMembers, ...cleanRow } = row;
+      return cleanRow;
+    });
+    const householdSheet = XLSX.utils.json_to_sheet(householdExport);
+    XLSX.utils.book_append_sheet(workbook, householdSheet, "Households");
+
+    // --- SHEET 2: Family Members ---
+    // Extract and flatten family members from the filtered households
+    const familyMembersExport = [];
+    
+    filteredData.forEach((household) => {
+      if (household._familyMembers && Array.isArray(household._familyMembers)) {
+        household._familyMembers.forEach((member) => {
+          familyMembersExport.push({
+            // Optional: Include Household Head Name or ID to link the sheets
+            "Household Head": `${household["First Name"] || ""} ${household["Last Name"] || ""}`.trim(),
+            ...member
+          });
+        });
+      }
+    });
+
+    // Only create the second sheet if there are family members found
+    if (familyMembersExport.length > 0) {
+      const familySheet = XLSX.utils.json_to_sheet(familyMembersExport);
+      XLSX.utils.book_append_sheet(workbook, familySheet, "Family Members");
+    }
+
+    // --- SAVE WORKBOOK ---
+    const timestamp = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(workbook, `Filtered_Dataset_${timestamp}.xlsx`);
+  };
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden pt-24">
@@ -611,13 +677,144 @@ export default function Dashboard() {
                                       ))}
                                   </MarkerClusterGroup>
                               </>
+                              
                           ) : (
                               <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-full shadow-xl z-[999] flex items-center gap-2 text-red-600 border border-red-200">
                                   <MapPin size={18} /><span className="font-medium">No GPS Coordinates found</span>
                               </div>
                           )}
                       </MapContainer>
+                      {/* FLOATING FILTER UI */}
+                      <div className="absolute top-4 right-6 z-[1000] w-80 max-h-[calc(100%-2rem)] flex flex-col pointer-events-none">
+                        <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-xl border border-gray-200 overflow-hidden flex flex-col pointer-events-auto">
+                          <div className="p-3 border-b flex justify-between items-center bg-[#3a5a40] text-white">
+                            <div className="flex items-center gap-2">
+                              <Search size={14} />
+                              <span className="text-xs font-bold uppercase tracking-widest">Map Filters</span>
+                            </div>
+                            <button 
+                              onClick={() => setFilters([...filters, { column: activeColumns[0], operator: "contains", value: "" }])}
+                              className="p-1 hover:bg-white/20 rounded-md transition"
+                            >
+                              <Plus size={16} />
+                            </button>
+                          </div>
 
+                          <div className="p-2 space-y-2 overflow-y-auto custom-scrollbar max-h-[450px]">
+                            {filters.map((f, i) => (
+                              <div key={i} className="p-3 bg-white rounded-lg border border-gray-200 shadow-sm relative group">
+                                <button 
+                                  onClick={() => setFilters(filters.filter((_, idx) => idx !== i))}
+                                  className="absolute top-1 right-1 text-gray-300 hover:text-red-500 transition"
+                                >
+                                  <X size={12} />
+                                </button>
+                                
+                                <div className="flex flex-col gap-2 mt-1">
+                                  <div className="flex gap-1">
+                                    {/* Column Selection */}
+                                    <select 
+                                      value={f.column} 
+                                      onChange={(e) => {
+                                        const newFilters = [...filters];
+                                        newFilters[i].column = e.target.value;
+                                        newFilters[i].value = ""; // Clear search when column changes
+                                        setFilters(newFilters);
+                                      }}
+                                      className="w-2/3 text-[10px] bg-gray-50 border border-gray-200 rounded px-2 py-1.5 font-bold text-gray-600 outline-none"
+                                    >
+                                      {activeColumns.map(col => <option key={col} value={col}>{col}</option>)}
+                                    </select>
+
+                                    {/* Operator */}
+                                    <select 
+                                      value={f.operator} 
+                                      onChange={(e) => {
+                                        const newFilters = [...filters];
+                                        newFilters[i].operator = e.target.value;
+                                        setFilters(newFilters);
+                                      }}
+                                      className="w-1/3 text-[10px] bg-gray-50 border border-gray-200 rounded px-1 py-1 text-[#3a5a40] font-bold outline-none"
+                                    >
+                                      <option value="contains">Like</option>
+                                      <option value="equals">Equals</option>
+                                      <option value="starts_with">Starts</option>
+                                    </select>
+                                  </div>
+
+                                  {/* Value Search with Dropdown Suggestions */}
+                                  <div className="relative">
+                                    <input 
+                                      type="text"
+                                      list={`vals-${i}`}
+                                      placeholder="Search or select value..."
+                                      value={f.value}
+                                      onChange={(e) => {
+                                        const newFilters = [...filters];
+                                        newFilters[i].value = e.target.value;
+                                        setFilters(newFilters);
+                                      }}
+                                      className="w-full text-xs border border-gray-200 rounded pl-2 pr-8 py-2 focus:ring-1 focus:ring-[#3a5a40] outline-none bg-gray-50/30 transition-all"
+                                    />
+                                    {f.value && (
+                                      <button
+                                        onClick={() => {
+                                          const newFilters = [...filters];
+                                          newFilters[i].value = "";
+                                          setFilters(newFilters);
+                                        }}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition-colors"
+                                        title="Clear input"
+                                      >
+                                        <X size={12} strokeWidth={3} />
+                                      </button>
+                                    )}
+
+                                    <datalist id={`vals-${i}`}>
+                                      {getUniqueValues(f.column).map(val => (
+                                        <option key={val} value={val} />
+                                      ))}
+                                    </datalist>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                            
+                            {filters.length === 0 && (
+                              <div className="text-center py-4 text-gray-400 text-[10px] font-medium">
+                                No filters active. Click "+" to start.
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* FLOATING FILTER UI - FOOTER SECTION */}
+                          {filters.length > 0 && (
+                            <div className="p-2 bg-gray-50 border-t flex flex-col gap-2">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">
+                                  Matches: {filteredData.length} / {data.length}
+                                </span>
+                                <button 
+                                  onClick={() => setFilters([])}
+                                  className="text-[9px] font-bold text-red-400 hover:text-red-600 uppercase transition-colors"
+                                >
+                                  Clear All
+                                </button>
+                              </div>
+                              
+                              {/* NEW DOWNLOAD BUTTON */}
+                              <button 
+                                onClick={handleDownloadFiltered}
+                                disabled={filteredData.length === 0}
+                                className="w-full bg-[#3a5a40] hover:bg-[#344e3a] text-white text-[10px] font-bold py-2 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <Save size={12} />
+                                Export Filtered Data (.xlsx)
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       {/* MODAL OVERLAY */}
                       <AnimatePresence>
                           {selectedHousehold && (
