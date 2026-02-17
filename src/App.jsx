@@ -12,6 +12,7 @@ import Resources from "./pages/Resources";
 import Contact from "./pages/Contact";
 import Datasets from "./pages/Datasets";
 import Dashboard from "./pages/Dashboard";
+import WebMap from "./pages/WebMap";
 
 import "./index.css";
 
@@ -40,6 +41,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/datasets" element={<Datasets />} />
             <Route path="/projectdetails" element={<ProjectDetails />} />
+            <Route path="/webmap" element={<WebMap />} />
           </Routes>
         </main>
         <Footer />

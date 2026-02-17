@@ -1,35 +1,83 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+import { Layers, Map as MapIcon, Compass } from "lucide-react";
+
+mapboxgl.accessToken = "pk.eyJ1IjoiamFvaGFsbGVuIiwiYSI6ImNtbHB3OGJseTFmcmkzZHM2amw3dzB3YmkifQ.3KuVI-f24eeLVP6fHl4EoQ";
 
 const WebMap = () => {
-  return (
-    <motion.section
-      className="w-full px-4 md:px-12 lg:px-24 py-16 bg-gray-50 text-center"
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.8 }}
-    >
-      <h2 className="text-4xl md:text-5xl font-bold text-green-800 mb-6">
-        CENVI Interactive Web Map
-      </h2>
-      <p className="text-lg text-gray-700 leading-relaxed text-center max-w-3xl mx-auto mb-10">
-        Explore our geospatial datasets — including shapefiles, raster imagery, and other
-        geoinformatics data used in hazard modeling, environmental planning, and research projects.
-      </p>
+  const mapContainer = useRef(null);
+  const mapRef = useRef(null);
+  const [isSatellite, setIsSatellite] = useState(false);
 
-      {/* Full ArcGIS Online Map Viewer with tools (legend, layer list, basemap gallery) */}
-      <div className="w-full h-[75vh] rounded-xl overflow-hidden shadow-lg">
-        <iframe
-          src="https://www.arcgis.com/apps/mapviewer/index.html?webmap=5af713038cf54283bbe8141d34a960d7&portalUrl=https://upcenvi.maps.arcgis.com"
-          width="100%"
-          height="100%"
-          title="CENVI Full Web Map"
-          style={{ border: "none" }}
-          allowFullScreen
-        ></iframe>
+  useEffect(() => {
+    if (mapRef.current) return;
+
+    mapRef.current = new mapboxgl.Map({
+      container: mapContainer.current,
+      style: "mapbox://styles/mapbox/outdoors-v12",
+      center: [123.8854, 10.3157],
+      zoom: 10,
+    });
+
+    mapRef.current.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+
+    return () => mapRef.current?.remove();
+  }, []);
+
+  // Style Toggle Function
+  const toggleStyle = () => {
+    const nextStyle = isSatellite ? "outdoors-v12" : "satellite-streets-v12";
+    mapRef.current.setStyle(`mapbox://styles/mapbox/${nextStyle}`);
+    setIsSatellite(!isSatellite);
+  };
+
+  return (
+    <div className="h-screen w-screen relative overflow-hidden bg-gray-900">
+      
+      {/* 1. THE MAP ENGINE */}
+      <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+
+      {/* 2. FLOATING HEADER (Top Left) */}
+      <div className="absolute top-16 left-6 z-10 animate-in fade-in duration-700">
+        <div className="bg-white/90 backdrop-blur-md p-5 rounded-2xl shadow-2xl border border-white/20 flex flex-col gap-1">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#3a5a40] rounded-lg text-white">
+              <Compass size={20} />
+            </div>
+            <div>
+              <h1 className="text-sm font-black text-[#3a5a40] uppercase tracking-widest leading-none">
+                CENVI Explorer
+              </h1>
+              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-tighter mt-1">
+                Geospatial Visualization Engine
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-    </motion.section>
+
+      {/* 3. STYLE TOGGLE BUTTON (Top Right) */}
+      <div className="absolute top-16 right-6 z-10">
+        <button 
+          onClick={toggleStyle}
+          className="group flex items-center gap-3 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-white/20 hover:bg-white transition-all duration-300"
+        >
+          <div className={`p-2 rounded-lg transition-colors ${isSatellite ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+            {isSatellite ? <Layers size={18} /> : <MapIcon size={18} />}
+          </div>
+          <div className="flex flex-col items-start pr-2">
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">
+              Base Map
+            </span>
+            <span className="text-xs font-bold text-gray-700">
+              {isSatellite ? "Satellite View" : "Terrain View"}
+            </span>
+          </div>
+        </button>
+      </div>
+
+    </div>
   );
 };
 

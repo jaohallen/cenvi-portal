@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import DatasetCard from "../components/DatasetCard";
 import DatasetPreviewModal from "../components/DatasetPreviewModal";
 import { Search, Filter, Download, FolderOpen, X, Copy, Phone, Mail, FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const Datasets = () => {
   const [datasets, setDatasets] = useState([]);
@@ -103,6 +104,7 @@ const Datasets = () => {
   };
 
   const hasActiveFilters = category !== "All" || downloadType !== "All" || search !== "";
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-16 px-4 md:px-8 font-sans">
@@ -123,6 +125,14 @@ const Datasets = () => {
             >
               request access here
             </button>.
+            <span className="font-semibold text-[#3a5a40]"><br /></span> You can also view the available datasets in our 
+            <button
+              onClick={() => navigate("/webmap")}
+              className="ml-1 text-[#3a5a40] font-bold hover:underline hover:text-[#588157] transition"
+            >
+              Web Map
+            </button>.
+
           </p>
         </div>
       </div>

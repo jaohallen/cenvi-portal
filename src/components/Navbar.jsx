@@ -15,7 +15,8 @@ const Navbar = () => {
   const isDarkPage = 
     location.pathname === "/datasets" || 
     location.pathname.startsWith("/dashboard") || 
-    location.pathname === "/projectdetails";
+    location.pathname === "/projectdetails"|| 
+    location.pathname === "/webmap";
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -173,6 +174,13 @@ const Navbar = () => {
                   className="block px-4 py-3 hover:bg-green-50 hover:text-[#344E41] cursor-pointer transition-colors"
                 >
                   Dashboard
+                </span>
+                <div className="h-px bg-gray-100 mx-2"></div>
+                <span
+                  onClick={() => handleNavigate("/webmap")}
+                  className="block px-4 py-3 hover:bg-green-50 hover:text-[#344E41] cursor-pointer transition-colors"
+                >
+                  Web Map
                 </span>
               </div>
             )}
