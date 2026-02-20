@@ -294,118 +294,140 @@ const PivotView = ({ data, columns, configs, setConfigs }) => {
   );
 };
 
-// --- SUMMARY CARD ---
-const SummaryCard = ({ item, data, onRemove, onResize }) => {
+// Add this helper function to identify binary categories
+const getBinaryGroups = (allColumns) => {
+  const groups = {};
+  allColumns.forEach(col => {
+    if (col.includes('/')) {
+      const parent = col.split('/')[0];
+      if (!groups[parent]) groups[parent] = [];
+      groups[parent].push(col);
+    }
+  });
+  // Filter out groups that only have 1 child (likely not a multi-select)
+  return Object.fromEntries(Object.entries(groups).filter(([_, children]) => children.length > 1));
+};
+
+// --- SUMMARY CARD (Updated for Binary Groups) ---
+const SummaryCard = ({ item, data, binaryGroups, onRemove, onResize }) => {
   const summaryData = useMemo(() => {
-    const summary = {};
-    let maxCount = 0;
-    data.forEach((row) => {
-      const value = row[item.name] || "No Data";
-      summary[value] = (summary[value] || 0) + 1;
-      if (summary[value] > maxCount) maxCount = summary[value];
-    });
-    return Object.entries(summary).sort(([, a], [, b]) => b - a).map(([key, value]) => ({ key, value, percent: (value / maxCount) * 100 }));
-  }, [data, item.name]);
+    const children = binaryGroups[item.name];
+    const results = {};
+
+    if (children) {
+      // BINARY LOGIC: Sum the 1s for each sub-column
+      children.forEach(col => {
+        const label = col.split('/').pop();
+        const total = data.reduce((sum, row) => {
+            // Check for numeric 1 or string "1"
+            const val = parseInt(row[col]);
+            return sum + (val === 1 ? 1 : 0);
+        }, 0);
+        if (total > 0) results[label] = total;
+      });
+    } else {
+      // CATEGORICAL LOGIC: Count unique string values
+      data.forEach((row) => {
+        const val = row[item.name] || "No Data";
+        if (children && typeof val === 'string' && val.includes(' ')) return;
+        results[val] = (results[val] || 0) + 1;
+      });
+    }
+
+    return Object.entries(results)
+      .sort(([, a], [, b]) => b - a)
+      .map(([key, value]) => ({ key, value }));
+  }, [data, item.name, binaryGroups]);
+
+  const maxVal = Math.max(...summaryData.map(d => d.value), 1);
 
   return (
-    <Reorder.Item value={item} id={item.name} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col ${item.size === "full" ? "h-[500px]" : "h-[300px]"}`}>
+    <Reorder.Item value={item} id={item.name} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col ${item.size === "full" ? "h-[500px]" : "h-[320px]"}`}>
       <div className="p-4 border-b bg-gray-50 flex justify-between items-center cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-2">
           <GripVertical size={16} className="text-gray-400" />
-          <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: item.color }}></div>
-          <h3 className="font-bold text-sm uppercase tracking-wide text-gray-700">{item.name}</h3>
+          <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+          <h3 className="font-bold text-xs uppercase tracking-wider text-gray-700 truncate max-w-[180px]">{item.name}</h3>
         </div>
         <div className="flex gap-1">
-          <button onClick={() => onResize(item.name)} className="p-1.5 hover:bg-gray-200 rounded text-gray-600 transition">{item.size === "full" ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
-          <button onClick={() => onRemove(item.name)} className="p-1.5 hover:bg-red-100 rounded text-red-500 transition"><X size={16} /></button>
+          <button onClick={() => onResize(item.name)} className="p-1 hover:bg-gray-200 rounded text-gray-500">{item.size === "full" ? <Minimize2 size={14} /> : <Maximize2 size={14} />}</button>
+          <button onClick={() => onRemove(item.name)} className="p-1 hover:bg-red-100 rounded text-red-500"><X size={14} /></button>
         </div>
       </div>
-      <div className="p-4 overflow-y-auto flex-1 space-y-3">
-        {summaryData.map(({ key, value, percent }) => (
+      <div className="p-4 overflow-y-auto flex-1 space-y-3 custom-scrollbar">
+        {summaryData.length > 0 ? summaryData.map(({ key, value }) => (
           <div key={key} className="text-sm">
-            <div className="flex justify-between mb-1"><span className="text-gray-700 font-medium truncate w-3/4">{key}</span><span className="text-gray-500">{value}</span></div>
-            <div className="w-full bg-gray-100 rounded-full h-2"><div className="h-2 rounded-full transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: item.color }}></div></div>
+            <div className="flex justify-between mb-1">
+              <span className="text-gray-600 font-medium truncate w-3/4">{key}</span>
+              <span className="text-gray-400 font-bold">{value}</span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-1.5">
+              <motion.div 
+                initial={{ width: 0 }} 
+                animate={{ width: `${(value / maxVal) * 100}%` }} 
+                className="h-1.5 rounded-full" 
+                style={{ backgroundColor: item.color }}
+              />
+            </div>
           </div>
-        ))}
+        )) : (
+            <div className="h-full flex items-center justify-center text-gray-300 italic text-xs">No data available</div>
+        )}
       </div>
     </Reorder.Item>
   );
 };
 
 // --- COLUMN CONFIGURATOR ---
-const ColumnConfigurator = ({ allColumns, selectedColumns, conversionColumns = [], onSave, onCancel }) => {
+const ColumnConfigurator = ({ allColumns, selectedColumns, onSave, onCancel }) => {
     const [tempSelected, setTempSelected] = useState(new Set(selectedColumns));
-    // NEW: State for columns to be converted
-    const [tempConvert, setTempConvert] = useState(new Set(conversionColumns));
     const [searchTerm, setSearchTerm] = useState("");
-
     const toggleColumn = (col) => {
       const newSet = new Set(tempSelected);
-      if (newSet.has(col)) {
-          newSet.delete(col);
-          // If deselected, also remove from conversion list
-          const newConvert = new Set(tempConvert);
-          newConvert.delete(col);
-          setTempConvert(newConvert);
-      } else {
-          newSet.add(col);
-      }
+      if (newSet.has(col)) newSet.delete(col);
+      else newSet.add(col);
       setTempSelected(newSet);
     };
-
-    const toggleConversion = (e, col) => {
-        e.stopPropagation(); // Prevent toggling the column selection
-        const newSet = new Set(tempConvert);
-        if (newSet.has(col)) newSet.delete(col);
-        else newSet.add(col);
-        setTempConvert(newSet);
+    const toggleAll = (select) => {
+      if (select) setTempSelected(new Set(allColumns));
+      else setTempSelected(new Set());
     };
-
     const filteredColumns = allColumns.filter(c => c.toLowerCase().includes(searchTerm.toLowerCase()));
   
     return (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[80vh] flex flex-col overflow-hidden">
           <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
-            <div>
-                <h2 className="text-xl font-bold text-[#344E41] flex items-center gap-2"><Settings className="text-[#3a5a40]" /> Data Cleaning</h2>
-                <p className="text-sm text-gray-500">Select columns and choose which ones to convert (1 → Yes, 0 → No).</p>
-            </div>
+            <div><h2 className="text-xl font-bold text-[#344E41] flex items-center gap-2"><Settings className="text-[#3a5a40]" /> Data Cleaning</h2><p className="text-sm text-gray-500">Select columns for Dashboard & Pivot Table.</p></div>
             <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
           </div>
-          
-          {/* ... Search Bar stays the same ... */}
-
+          <div className="p-4 border-b flex gap-4 items-center bg-white">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input type="text" placeholder="Search columns..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#3a5a40] outline-none" />
+            </div>
+            <div className="flex gap-2 text-sm">
+              <button onClick={() => toggleAll(true)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 font-medium transition">Select All</button>
+              <button onClick={() => toggleAll(false)} className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded text-gray-700 font-medium transition">Deselect All</button>
+            </div>
+          </div>
           <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {filteredColumns.map(col => {
                 const isSelected = tempSelected.has(col);
-                const isConverting = tempConvert.has(col);
                 return (
-                  <div key={col} onClick={() => toggleColumn(col)} className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? "bg-green-50 border-[#3a5a40] shadow-sm" : "bg-white border-gray-200 hover:border-gray-300"}`}>
-                    <div className="flex items-center gap-3 overflow-hidden">
-                        {isSelected ? <CheckSquare className="text-[#3a5a40] shrink-0" size={20} /> : <Square className="text-gray-300 shrink-0" size={20} />}
-                        <span className={`text-sm truncate ${isSelected ? "text-[#344E41] font-medium" : "text-gray-500"}`} title={col}>{col}</span>
-                    </div>
-                    
-                    {/* NEW: Conversion Toggle */}
-                    {isSelected && (
-                        <button 
-                            onClick={(e) => toggleConversion(e, col)}
-                            className={`text-[9px] px-2 py-1 rounded font-bold uppercase tracking-tighter transition-colors ${isConverting ? 'bg-[#3a5a40] text-white' : 'bg-gray-200 text-gray-500'}`}
-                        >
-                            {isConverting ? "1→Yes" : "Raw"}
-                        </button>
-                    )}
+                  <div key={col} onClick={() => toggleColumn(col)} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${isSelected ? "bg-green-50 border-[#3a5a40] shadow-sm" : "bg-white border-gray-200 hover:border-gray-300"}`}>
+                    {isSelected ? <CheckSquare className="text-[#3a5a40] shrink-0" size={20} /> : <Square className="text-gray-300 shrink-0" size={20} />}
+                    <span className={`text-sm truncate ${isSelected ? "text-[#344E41] font-medium" : "text-gray-500"}`} title={col}>{col}</span>
                   </div>
                 );
               })}
             </div>
           </div>
           <div className="p-6 border-t bg-white flex justify-end gap-3">
+            <div className="mr-auto text-sm text-gray-500">{tempSelected.size} columns selected</div>
             <button onClick={onCancel} className="px-6 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 font-medium">Cancel</button>
-            {/* NEW: Passing both arrays back */}
-            <button onClick={() => onSave(Array.from(tempSelected), Array.from(tempConvert))} className="px-6 py-2 bg-[#3a5a40] hover:bg-[#344E41] text-white rounded-lg font-medium shadow-md flex items-center gap-2"><Save size={18} /> Confirm</button>
+            <button onClick={() => onSave(Array.from(tempSelected))} className="px-6 py-2 bg-[#3a5a40] hover:bg-[#344E41] text-white rounded-lg font-medium shadow-md flex items-center gap-2"><Save size={18} /> Confirm</button>
           </div>
         </div>
       </div>
@@ -418,6 +440,7 @@ export default function Dashboard() {
   const [data, setData] = useState([]);
   const [allColumns, setAllColumns] = useState([]);       
   const [activeColumns, setActiveColumns] = useState([]); 
+  const [binaryGroups, setBinaryGroups] = useState({});
   const [showConfig, setShowConfig] = useState(false);    
   const [viewMode, setViewMode] = useState("map"); 
   const [isSidebarOpen, setSidebarOpen] = useState(true); 
@@ -430,7 +453,6 @@ export default function Dashboard() {
   const [selectedColumn, setSelectedColumn] = useState("");
   const [activeSummaries, setActiveSummaries] = useState([]);
   const [selectedHousehold, setSelectedHousehold] = useState(null);
-  const [conversionColumns, setConversionColumns] = useState([]);
 
   const [filters, setFilters] = useState([]); // Array of { column, operator, value }
 
@@ -495,38 +517,77 @@ export default function Dashboard() {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
+    
     reader.onload = (evt) => {
       const workbook = XLSX.read(evt.target.result, { type: "binary" });
-      const cleanStr = (str) => !str ? "" : String(str).replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
-      const sheet1OriginalName = workbook.SheetNames[0];
-      const households = XLSX.utils.sheet_to_json(workbook.Sheets[sheet1OriginalName]);
+      
+      // 1. Helper for consistent comparison (trims spaces only)
+      const cleanRef = (str) => !str ? "" : String(str).trim();
+      
+      const sheet1Name = workbook.SheetNames[0];
+      const households = XLSX.utils.sheet_to_json(workbook.Sheets[sheet1Name]);
       const familyMembers = workbook.SheetNames[1] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[1]]) : [];
-      const cleanSheet1Name = cleanStr(sheet1OriginalName);
+      
+      // 2. Map family members to their parent index
       const familyMap = {};
       familyMembers.forEach(member => {
-        const cleanParentRef = cleanStr(member._parent_table_name);
-        if (cleanParentRef === cleanSheet1Name) {
+        // Match member to parent using sheet name and parent index
+        if (cleanRef(member._parent_table_name) === cleanRef(sheet1Name)) {
           const pIdx = member._parent_index;
           if (!familyMap[pIdx]) familyMap[pIdx] = [];
           familyMap[pIdx].push(member);
         }
       });
-      const enrichedData = households.map(h => ({ ...h, _familyMembers: familyMap[h._index] || [] }));
+
+      // 3. Enrich household data with linked family members
+      const enrichedData = households.map(h => ({ 
+        ...h, 
+        _familyMembers: familyMap[h._index] || [] 
+      }));
+
       if (enrichedData.length > 0) {
+        // Set enriched data (important: do not overwrite this later!)
         setData(enrichedData);
-        const defaultHouseholdCols = [ "Last Name", "Sex at birth", "Age", ];
+        
         const allCols = Object.keys(households[0]);
         setAllColumns(allCols);
-        const existingDefaults = defaultHouseholdCols.filter(col => allCols.includes(col));
-        setActiveColumns(allCols); 
-        const initialSummaries = existingDefaults.map((col, idx) => ({ name: col, color: SYMBOLOGY_COLORS[idx % SYMBOLOGY_COLORS.length] }));
-        setActiveSummaries(initialSummaries);
-        setShowConfig(true); 
+        
+        // Handle Binary Groups for multi-select questions
+        const groups = getBinaryGroups(allCols);
+        setBinaryGroups(groups);
+
+        // Auto-detect GPS and Names
         const { lat, lng, name } = detectFields(allCols);
-        setLatField(lat); setLngField(lng); setNameField(name);
+        setLatField(lat); 
+        setLngField(lng); 
+        setNameField(name);
+
+        // Initialize Summary Cards
+        const defaultHouseholdCols = [ "Last Name", "Sex at birth", "Age"];
+        const existingDefaults = defaultHouseholdCols.filter(col => allCols.includes(col));
+        
+        // Merge standard columns and first 2 binary groups for analysis
+        const initialSummaries = [
+            ...existingDefaults.map((col, idx) => ({ 
+                name: col, 
+                size: "half", 
+                color: SYMBOLOGY_COLORS[idx % SYMBOLOGY_COLORS.length] 
+            })),
+            ...Object.keys(groups).slice(0, 2).map((name, i) => ({
+                name,
+                size: "half",
+                color: SYMBOLOGY_COLORS[(existingDefaults.length + i) % SYMBOLOGY_COLORS.length]
+            }))
+        ];
+
+        setActiveSummaries(initialSummaries);
+        setActiveColumns(allCols);
+        setShowConfig(true); 
       }
     };
-    reader.readAsBinaryString(file); e.target.value = null; 
+    
+    reader.readAsBinaryString(file); 
+    e.target.value = null; 
   };
 
   const handleConfigSave = (selected) => { setActiveColumns(selected); setShowConfig(false); };
@@ -620,6 +681,12 @@ export default function Dashboard() {
     XLSX.writeFile(workbook, `Filtered_Dataset_${timestamp}.xlsx`);
   };
 
+  const analysisOptions = useMemo(() => {
+    const parents = Object.keys(binaryGroups);
+    const individuals = allColumns.filter(c => !c.includes('/'));
+    return [...parents, ...individuals].sort();
+  }, [allColumns, binaryGroups]);
+
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden pt-20">
       {showConfig && <ColumnConfigurator allColumns={allColumns} selectedColumns={activeColumns} onSave={handleConfigSave} onCancel={handleConfigCancel} />}
@@ -647,13 +714,14 @@ export default function Dashboard() {
               <select value={selectedColumn} onChange={(e) => setSelectedColumn(e.target.value)} className="flex-1 border-gray-300 border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#3a5a40] outline-none">
                 <option value="">Select a column to analyze...</option>
                 {activeColumns.map((col) => <option key={col} value={col}>{col}</option>)}
+                {analysisOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
               <button onClick={addSummaryCard} disabled={!selectedColumn} className="bg-[#3a5a40] text-white p-2 rounded-lg hover:bg-[#344E41] disabled:opacity-50 disabled:cursor-not-allowed transition"><Plus size={20} /></button>
             </div>
           )}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-100 scrollbar-thin">
             <Reorder.Group axis="y" values={activeSummaries} onReorder={setActiveSummaries} className="space-y-4">
-              <AnimatePresence>{activeSummaries.map((item) => <SummaryCard key={item.name} item={item} data={data} onRemove={removeSummaryCard} onResize={toggleSize} />)}</AnimatePresence>
+              <AnimatePresence>{activeSummaries.map((item) => <SummaryCard key={item.name} item={item} data={data} binaryGroups={binaryGroups} onRemove={removeSummaryCard} onResize={toggleSize} />)}</AnimatePresence>
             </Reorder.Group>
             {activeSummaries.length === 0 && data.length > 0 && (
               <div className="text-center text-gray-400 mt-10 px-6">
