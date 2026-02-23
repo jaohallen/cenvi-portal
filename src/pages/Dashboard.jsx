@@ -35,6 +35,16 @@ const SYMBOLOGY_COLORS = [
   "#264653", "#d62828", "#457b9d", "#6d597a", "#b5838d"
 ];
 
+const GROUP_DEFINITIONS = {
+  "Profile or sector": "Profile or sector:/",
+  "Type of Disability": "Type/s of Disability:/",
+  "Walls": "Walls/",
+  "Roofs": "Roof/",
+  "How is the house powered": "How is the house powered (main source and/or backup)?/",
+  "Method of cooking": "Method of cooking:/",
+  "Water source": "Presence of:/"
+};
+
 // --- Helper Components ---
 function FitBounds({ points }) {
   const map = useMap();
@@ -295,7 +305,7 @@ const PivotView = ({ data, columns, configs, setConfigs }) => {
 };
 
 // --- SUMMARY CARD ---
-const SummaryCard = ({ item, data, onRemove, onResize }) => {
+const SummaryCard = ({ item, data, onRemove }) => { // 1. Removed onResize prop
   const summaryData = useMemo(() => {
     const summary = {};
     let maxCount = 0;
@@ -304,11 +314,21 @@ const SummaryCard = ({ item, data, onRemove, onResize }) => {
       summary[value] = (summary[value] || 0) + 1;
       if (summary[value] > maxCount) maxCount = summary[value];
     });
-    return Object.entries(summary).sort(([, a], [, b]) => b - a).map(([key, value]) => ({ key, value, percent: (value / maxCount) * 100 }));
+    return Object.entries(summary)
+      .sort(([, a], [, b]) => b - a)
+      .map(([key, value]) => ({ 
+        key, 
+        value, 
+        percent: (value / maxCount) * 100 
+      }));
   }, [data, item.name]);
 
   return (
-    <Reorder.Item value={item} id={item.name} className={`bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col ${item.size === "full" ? "h-[500px]" : "h-[300px]"}`}>
+    <Reorder.Item 
+      value={item} 
+      id={item.name} 
+      className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-[300px]" // 2. Fixed height
+    >
       <div className="p-4 border-b bg-gray-50 flex justify-between items-center cursor-grab active:cursor-grabbing">
         <div className="flex items-center gap-2">
           <GripVertical size={16} className="text-gray-400" />
@@ -316,15 +336,28 @@ const SummaryCard = ({ item, data, onRemove, onResize }) => {
           <h3 className="font-bold text-sm uppercase tracking-wide text-gray-700">{item.name}</h3>
         </div>
         <div className="flex gap-1">
-          <button onClick={() => onResize(item.name)} className="p-1.5 hover:bg-gray-200 rounded text-gray-600 transition">{item.size === "full" ? <Minimize2 size={16} /> : <Maximize2 size={16} />}</button>
-          <button onClick={() => onRemove(item.name)} className="p-1.5 hover:bg-red-100 rounded text-red-500 transition"><X size={16} /></button>
+          {/* 3. Removed the Minimize2 / Maximize2 button logic here */}
+          <button 
+            onClick={() => onRemove(item.name)} 
+            className="p-1.5 hover:bg-red-100 rounded text-red-500 transition"
+          >
+            <X size={16} />
+          </button>
         </div>
       </div>
       <div className="p-4 overflow-y-auto flex-1 space-y-3">
         {summaryData.map(({ key, value, percent }) => (
           <div key={key} className="text-sm">
-            <div className="flex justify-between mb-1"><span className="text-gray-700 font-medium truncate w-3/4">{key}</span><span className="text-gray-500">{value}</span></div>
-            <div className="w-full bg-gray-100 rounded-full h-2"><div className="h-2 rounded-full transition-all duration-500" style={{ width: `${percent}%`, backgroundColor: item.color }}></div></div>
+            <div className="flex justify-between mb-1">
+              <span className="text-gray-700 font-medium truncate w-3/4">{key}</span>
+              <span className="text-gray-500">{value}</span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2">
+              <div 
+                className="h-2 rounded-full transition-all duration-500" 
+                style={{ width: `${percent}%`, backgroundColor: item.color }}
+              ></div>
+            </div>
           </div>
         ))}
       </div>
@@ -678,7 +711,7 @@ export default function Dashboard() {
           )}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-100 scrollbar-thin">
             <Reorder.Group axis="y" values={activeSummaries} onReorder={setActiveSummaries} className="space-y-4">
-              <AnimatePresence>{activeSummaries.map((item) => <SummaryCard key={item.name} item={item} data={processedData} onRemove={removeSummaryCard} onResize={toggleSize} />)}</AnimatePresence>
+              <AnimatePresence>{activeSummaries.map((item) => <SummaryCard key={item.name} item={item} data={processedData} onRemove={removeSummaryCard} />)}</AnimatePresence>
             </Reorder.Group>
             {activeSummaries.length === 0 && data.length > 0 && (
               <div className="text-center text-gray-400 mt-10 px-6">
