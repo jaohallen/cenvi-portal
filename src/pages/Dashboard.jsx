@@ -529,7 +529,12 @@ export default function Dashboard() {
     reader.readAsBinaryString(file); e.target.value = null; 
   };
 
-  const handleConfigSave = (selected) => { setActiveColumns(selected); setShowConfig(false); };
+  const handleConfigSave = (selected, toConvert) => { 
+    setActiveColumns(selected); 
+    setConversionColumns(toConvert); // Store which columns should be transformed
+    setShowConfig(false); 
+  };
+
   const handleConfigCancel = () => { if (activeColumns.length === 0) setData([]); setShowConfig(false); };
 
   const addSummaryCard = () => {
@@ -543,23 +548,23 @@ export default function Dashboard() {
   const toggleSize = (column) => { setActiveSummaries(activeSummaries.map((c) => c.name === column ? { ...c, size: c.size === "half" ? "full" : "half" } : c)); };
 
   const getUniqueValues = (columnName) => {
-    if (!columnName || !data.length) return [];
-    const values = data.map(row => String(row[columnName] || ""));
+    if (!columnName || !processedData.length) return []; 
+    const values = processedData.map(row => String(row[columnName] || ""));
     return [...new Set(values)].filter(val => val.trim() !== "").sort();
   };
-
   const processedData = useMemo(() => {
+    if (!data || data.length === 0) return [];
     if (conversionColumns.length === 0) return data;
 
     return data.map(row => {
       const newRow = { ...row };
       conversionColumns.forEach(col => {
         const val = newRow[col];
-        // Check for both number and string types from Excel
+        // Convert 1 to "Yes" and 0 to "N/A"
         if (val === 1 || val === "1") {
           newRow[col] = "Yes";
         } else if (val === 0 || val === "0") {
-          newRow[col] = "No";
+          newRow[col] = "N/A";
         }
       });
       return newRow;
@@ -567,27 +572,28 @@ export default function Dashboard() {
   }, [data, conversionColumns]);
 
   const filteredData = useMemo(() => {
-  if (filters.length === 0) return processedData;
+    if (filters.length === 0) return processedData; 
 
-  return processedData.filter((row) => {
-    return filters.every((f) => {
-      if (!f.column || !f.value || f.value.trim() === "") return true;
+    return processedData.filter((row) => {
+      return filters.every((f) => {
+        if (!f.column || !f.value || f.value.trim() === "") return true; 
 
-      const cellValue = String(row[f.column] || "").toLowerCase();
-      const filterValue = f.value.toLowerCase();
+        const cellValue = String(row[f.column] || "").toLowerCase();
+        const filterValue = f.value.toLowerCase();
 
-      switch (f.operator) {
-        case "equals": return cellValue === filterValue;
-        case "contains": return cellValue.includes(filterValue);
-        case "starts_with": return cellValue.startsWith(filterValue);
-        default: return true;
-      }
+        switch (f.operator) {
+          case "equals": return cellValue === filterValue;
+          case "contains": return cellValue.includes(filterValue);
+          case "starts_with": return cellValue.startsWith(filterValue);
+          default: return true;
+        }
+      });
     });
-  });
-}, [processedData, filters]);
+  }, [processedData, filters]);
 
   const validPoints = useMemo(() => {
     if (!latField || !lngField) return [];
+    // filteredData now contains the 'Yes' and 'N/A' strings
     return filteredData.map((row) => ({ 
       lat: parseFloat(row[latField]), 
       lng: parseFloat(row[lngField]), 
@@ -600,40 +606,43 @@ export default function Dashboard() {
 
     const workbook = XLSX.utils.book_new();
 
-    // --- SHEET 1: Households ---
-    // Clean internal keys for the main sheet
+    // --- SHEET 1: Households (Using processed data) ---
     const householdExport = filteredData.map(row => {
       const { _familyMembers, ...cleanRow } = row;
       return cleanRow;
     });
+    
     const householdSheet = XLSX.utils.json_to_sheet(householdExport);
     XLSX.utils.book_append_sheet(workbook, householdSheet, "Households");
 
     // --- SHEET 2: Family Members ---
-    // Extract and flatten family members from the filtered households
     const familyMembersExport = [];
     
     filteredData.forEach((household) => {
       if (household._familyMembers && Array.isArray(household._familyMembers)) {
         household._familyMembers.forEach((member) => {
+          // Apply the same conversion logic to family members if needed
+          const processedMember = { ...member };
+          conversionColumns.forEach(col => {
+            if (processedMember[col] === 1 || processedMember[col] === "1") processedMember[col] = "Yes";
+            if (processedMember[col] === 0 || processedMember[col] === "0") processedMember[col] = "N/A";
+          });
+
           familyMembersExport.push({
-            // Optional: Include Household Head Name or ID to link the sheets
             "Household Head": `${household["First Name"] || ""} ${household["Last Name"] || ""}`.trim(),
-            ...member
+            ...processedMember
           });
         });
       }
     });
 
-    // Only create the second sheet if there are family members found
     if (familyMembersExport.length > 0) {
       const familySheet = XLSX.utils.json_to_sheet(familyMembersExport);
       XLSX.utils.book_append_sheet(workbook, familySheet, "Family Members");
     }
 
-    // --- SAVE WORKBOOK ---
     const timestamp = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `Filtered_Dataset_${timestamp}.xlsx`);
+    XLSX.writeFile(workbook, `CENVI_Filtered_Export_${timestamp}.xlsx`);
   };
 
   return (
@@ -669,7 +678,7 @@ export default function Dashboard() {
           )}
           <div className="flex-1 overflow-y-auto p-4 bg-gray-100 scrollbar-thin">
             <Reorder.Group axis="y" values={activeSummaries} onReorder={setActiveSummaries} className="space-y-4">
-              <AnimatePresence>{activeSummaries.map((item) => <SummaryCard key={item.name} item={item} data={data} onRemove={removeSummaryCard} onResize={toggleSize} />)}</AnimatePresence>
+              <AnimatePresence>{activeSummaries.map((item) => <SummaryCard key={item.name} item={item} data={processedData} onRemove={removeSummaryCard} onResize={toggleSize} />)}</AnimatePresence>
             </Reorder.Group>
             {activeSummaries.length === 0 && data.length > 0 && (
               <div className="text-center text-gray-400 mt-10 px-6">
