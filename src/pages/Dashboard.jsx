@@ -369,7 +369,7 @@ const ColumnConfigurator = ({ allColumns, selectedColumns, conversionColumns = [
           <div className="p-6 border-b bg-gray-50 flex justify-between items-center">
             <div>
                 <h2 className="text-xl font-bold text-[#344E41] flex items-center gap-2"><Settings className="text-[#3a5a40]" /> Data Cleaning</h2>
-                <p className="text-sm text-gray-500">Select columns and choose which ones to convert (1 → Yes, 0 → No).</p>
+                <p className="text-sm text-gray-500">Select columns to add for visualization and analysis.</p>
             </div>
             <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
           </div>
@@ -548,27 +548,43 @@ export default function Dashboard() {
     return [...new Set(values)].filter(val => val.trim() !== "").sort();
   };
 
-  const filteredData = useMemo(() => {
-    if (filters.length === 0) return data;
+  const processedData = useMemo(() => {
+    if (conversionColumns.length === 0) return data;
 
-    return data.filter((row) => {
-      return filters.every((f) => {
-        if (!f.column) return true;
-        
-        if (!f.value || f.value.trim() === "") return true; 
-
-        const cellValue = String(row[f.column] || "").toLowerCase();
-        const filterValue = f.value.toLowerCase();
-
-        switch (f.operator) {
-          case "equals": return cellValue === filterValue;
-          case "contains": return cellValue.includes(filterValue);
-          case "starts_with": return cellValue.startsWith(filterValue);
-          default: return true;
+    return data.map(row => {
+      const newRow = { ...row };
+      conversionColumns.forEach(col => {
+        const val = newRow[col];
+        // Check for both number and string types from Excel
+        if (val === 1 || val === "1") {
+          newRow[col] = "Yes";
+        } else if (val === 0 || val === "0") {
+          newRow[col] = "No";
         }
       });
+      return newRow;
     });
-  }, [data, filters]);
+  }, [data, conversionColumns]);
+
+  const filteredData = useMemo(() => {
+  if (filters.length === 0) return processedData;
+
+  return processedData.filter((row) => {
+    return filters.every((f) => {
+      if (!f.column || !f.value || f.value.trim() === "") return true;
+
+      const cellValue = String(row[f.column] || "").toLowerCase();
+      const filterValue = f.value.toLowerCase();
+
+      switch (f.operator) {
+        case "equals": return cellValue === filterValue;
+        case "contains": return cellValue.includes(filterValue);
+        case "starts_with": return cellValue.startsWith(filterValue);
+        default: return true;
+      }
+    });
+  });
+}, [processedData, filters]);
 
   const validPoints = useMemo(() => {
     if (!latField || !lngField) return [];
@@ -680,7 +696,7 @@ export default function Dashboard() {
         )}
         <div className="flex-1 relative overflow-hidden">
           {viewMode === "pivot" ? (
-              <PivotView data={data} columns={activeColumns} configs={pivotConfigs} setConfigs={setPivotConfigs} />
+              <PivotView data={processedData} columns={activeColumns} configs={pivotConfigs} setConfigs={setPivotConfigs} />
           ) : (
               <div className="w-full h-full relative">
                   {data.length > 0 ? (
