@@ -88,6 +88,17 @@ const createClusterCustomIcon = (cluster) => {
   });
 };
 
+const createSingleCustomIcon = () => {
+  return L.divIcon({
+    html: `<div class="flex items-center justify-center w-8 h-8 bg-[#3a5a40] text-white rounded-full border-2 border-white/80 shadow-md transform hover:scale-110 transition-transform font-bold text-xs">
+            1
+           </div>`,
+    className: "bg-transparent",
+    iconSize: L.point(32, 32),
+    iconAnchor: L.point(16, 16),
+  });
+};
+
 // --- PIVOT BLOCK COMPONENT ---
 const PivotBlock = ({ id, data, columns, config, setConfig, onRemove, canRemove }) => {
   const { rowField, colField, valField, aggFunc, showChart } = config;
@@ -848,16 +859,17 @@ export default function Dashboard() {
                                   />
                                   <ResetExtentControl points={validPoints.map(p => [p.lat, p.lng])} />
                                   <MarkerClusterGroup chunkedLoading iconCreateFunction={createClusterCustomIcon}>
-                                      {validPoints.map((pt, index) => (
-                                          <Marker 
-                                              key={index} 
-                                              position={[pt.lat, pt.lng]}
-                                              eventHandlers={{
-                                                  click: () => setSelectedHousehold(pt.row),
-                                              }}
-                                          />
-                                      ))}
-                                  </MarkerClusterGroup>
+                                    {validPoints.map((pt, index) => (
+                                        <Marker 
+                                            key={index} 
+                                            position={[pt.lat, pt.lng]}
+                                            icon={createSingleCustomIcon(pt)}
+                                            eventHandlers={{
+                                                click: () => setSelectedHousehold(pt.row),
+                                            }}
+                                        />
+                                    ))}
+                                </MarkerClusterGroup>
                               </>
                               
                           ) : (
