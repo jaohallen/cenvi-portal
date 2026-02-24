@@ -47,18 +47,25 @@ const GROUP_DEFINITIONS = {
   "Mode of sending": "Communication devices available (sending communication)/"
 };
 
-// --- Helper Components ---
 function FitBounds({ points }) {
   const map = useMap();
+  const lastPointsRef = useRef("");
+
   useEffect(() => {
     if (points.length > 0) {
-      const bounds = L.latLngBounds(points);
-      map.fitBounds(bounds, { padding: [50, 50] });
+      const pointsKey = JSON.stringify(points);
+      // Only auto-zoom if the filtered data itself has changed
+      if (pointsKey !== lastPointsRef.current) {
+        const bounds = L.latLngBounds(points);
+        map.fitBounds(bounds, { padding: [50, 50] });
+        lastPointsRef.current = pointsKey;
+      }
     }
   }, [points, map]);
   
   useEffect(() => {
-     setTimeout(() => { map.invalidateSize(); }, 300);
+     const timer = setTimeout(() => { map.invalidateSize(); }, 300);
+     return () => clearTimeout(timer);
   });
   return null;
 }
@@ -473,6 +480,35 @@ const ColumnConfigurator = ({ allColumns, selectedColumns, conversionColumns = [
     );
 };
 
+function ResetExtentControl({ points }) {
+  const map = useMap();
+
+  const handleReset = (e) => {
+    // Prevent the click from bubbling up to the map
+    e.stopPropagation();
+    e.preventDefault();
+    
+    if (points.length > 0) {
+      const bounds = L.latLngBounds(points);
+      map.fitBounds(bounds, { padding: [50, 50] });
+    }
+  };
+
+  return (
+    <div className="leaflet-top leaflet-left !mt-20"> {/* Adjust !mt-20 to position it below default zoom controls */}
+      <div className="leaflet-control leaflet-bar pointer-events-auto">
+        <button
+          onClick={handleReset}
+          className="bg-white hover:bg-gray-100 text-gray-700 w-8 h-8 flex items-center justify-center transition-colors border-none"
+          title="Return to Full Extent"
+        >
+          <RotateCcw size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // --- MAIN DASHBOARD ---
 export default function Dashboard() {
   const [isRestoring, setRestoring] = useState(true);
@@ -806,7 +842,11 @@ export default function Dashboard() {
                           <TileLayer attribution="&copy; OpenStreetMap" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                           {validPoints.length > 0 ? (
                               <>
-                                  <FitBounds points={validPoints.map(p => [p.lat, p.lng])} />
+                                  <FitBounds 
+                                    points={filteredData.map(d => [d[latField], d[lngField]])} 
+                                    selectedHousehold={selectedHousehold} 
+                                  />
+                                  <ResetExtentControl points={validPoints.map(p => [p.lat, p.lng])} />
                                   <MarkerClusterGroup chunkedLoading iconCreateFunction={createClusterCustomIcon}>
                                       {validPoints.map((pt, index) => (
                                           <Marker 
