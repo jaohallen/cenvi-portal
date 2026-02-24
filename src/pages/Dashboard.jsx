@@ -573,7 +573,13 @@ export default function Dashboard() {
   const addSummaryCard = () => {
     if (selectedColumn && !activeSummaries.find((c) => c.name === selectedColumn)) {
       const assignedColor = SYMBOLOGY_COLORS[activeSummaries.length % SYMBOLOGY_COLORS.length];
-      setActiveSummaries([{ name: selectedColumn, size: "half", color: assignedColor }, ...activeSummaries]);
+      
+      setActiveSummaries([...activeSummaries, { 
+        name: selectedColumn, 
+        size: "half", 
+        color: assignedColor 
+      }]);
+      
       setSelectedColumn("");
     }
   };
