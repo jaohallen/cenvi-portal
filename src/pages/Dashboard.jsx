@@ -8,7 +8,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
 } from "recharts";
 import { 
-  Upload, X, Maximize2, Minimize2, Plus, MapPin, 
+  Upload, X, Plus, MapPin, 
   FileSpreadsheet, GripVertical, Info, Settings, 
   CheckSquare, Square, Search, Save, Table, 
   PanelLeftClose, PanelLeftOpen, RotateCcw, Loader2, 
@@ -42,7 +42,9 @@ const GROUP_DEFINITIONS = {
   "Roofs": "Roof/",
   "How is the house powered": "How is the house powered (main source and/or backup)?/",
   "Method of cooking": "Method of cooking:/",
-  "Water source": "Presence of:/"
+  "Water source": "Presence of:/",
+  "Mode of receiving": "Mode of communication (receiving emergency news)/",
+  "Mode of sending": "Communication devices available (sending communication)/"
 };
 
 // --- Helper Components ---
@@ -530,36 +532,44 @@ export default function Dashboard() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       const workbook = XLSX.read(evt.target.result, { type: "binary" });
-      const cleanStr = (str) => !str ? "" : String(str).replace(/[^a-zA-Z0-9]/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
       const sheet1OriginalName = workbook.SheetNames[0];
       const households = XLSX.utils.sheet_to_json(workbook.Sheets[sheet1OriginalName]);
-      const familyMembers = workbook.SheetNames[1] ? XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[1]]) : [];
-      const cleanSheet1Name = cleanStr(sheet1OriginalName);
-      const familyMap = {};
-      familyMembers.forEach(member => {
-        const cleanParentRef = cleanStr(member._parent_table_name);
-        if (cleanParentRef === cleanSheet1Name) {
-          const pIdx = member._parent_index;
-          if (!familyMap[pIdx]) familyMap[pIdx] = [];
-          familyMap[pIdx].push(member);
-        }
-      });
-      const enrichedData = households.map(h => ({ ...h, _familyMembers: familyMap[h._index] || [] }));
-      if (enrichedData.length > 0) {
-        setData(enrichedData);
-        const defaultHouseholdCols = [ "Last Name", "Sex at birth", "Age", ];
-        const allCols = Object.keys(households[0]);
+      
+      if (households.length > 0) {
+        const simplifiedData = households.map(row => {
+          const newRow = { ...row };
+          Object.entries(GROUP_DEFINITIONS).forEach(([simpleName, prefix]) => {
+            const matchingKeys = Object.keys(row).filter(key => key.startsWith(prefix));
+            if (matchingKeys.length > 0) {
+              const activeKey = matchingKeys.find(key => row[key] === 1 || row[key] === "1");
+              newRow[simpleName] = activeKey ? activeKey.replace(prefix, "") : "N/A";
+              matchingKeys.forEach(key => delete newRow[key]);
+            }
+          });
+          return newRow;
+        });
+
+        setData(simplifiedData);
+        const allCols = Object.keys(simplifiedData[0]);
         setAllColumns(allCols);
-        const existingDefaults = defaultHouseholdCols.filter(col => allCols.includes(col));
         setActiveColumns(allCols); 
-        const initialSummaries = existingDefaults.map((col, idx) => ({ name: col, color: SYMBOLOGY_COLORS[idx % SYMBOLOGY_COLORS.length] }));
+        
+        const defaultHouseholdCols = ["Last Name", "Sex at birth", "Age"];
+        const existingDefaults = defaultHouseholdCols.filter(col => allCols.includes(col));
+        
+        const initialSummaries = existingDefaults.map((col, idx) => ({ 
+          name: col, 
+          color: SYMBOLOGY_COLORS[idx % SYMBOLOGY_COLORS.length] 
+        }));
         setActiveSummaries(initialSummaries);
+        
         setShowConfig(true); 
         const { lat, lng, name } = detectFields(allCols);
         setLatField(lat); setLngField(lng); setNameField(name);
       }
     };
-    reader.readAsBinaryString(file); e.target.value = null; 
+    reader.readAsBinaryString(file); 
+    e.target.value = null; 
   };
 
   const handleConfigSave = (selected, toConvert) => { 
