@@ -310,20 +310,33 @@ const PivotView = ({ data, columns, configs, setConfigs }) => {
 const SummaryCard = ({ item, data, onRemove }) => { // 1. Removed onResize prop
   const summaryData = useMemo(() => {
     const summary = {};
-    let maxCount = 0;
+    let totalCounts = 0;
+
     data.forEach((row) => {
-      const value = row[item.name] || "No Data";
-      summary[value] = (summary[value] || 0) + 1;
-      if (summary[value] > maxCount) maxCount = summary[value];
+      const val = row[item.name];
+      
+      // If it's an array (Multi-select group), count each item individually
+      if (Array.isArray(val)) {
+        val.forEach(subItem => {
+          const cleanKey = subItem || "No Data";
+          summary[cleanKey] = (summary[cleanKey] || 0) + 1;
+        });
+      } else {
+        const cleanKey = val || "No Data";
+        summary[cleanKey] = (summary[cleanKey] || 0) + 1;
+      }
     });
+
+    const maxCount = Math.max(...Object.values(summary), 0);
+
     return Object.entries(summary)
       .sort(([, a], [, b]) => b - a)
       .map(([key, value]) => ({ 
         key, 
         value, 
-        percent: (value / maxCount) * 100 
+        percent: maxCount > 0 ? (value / maxCount) * 100 : 0 
       }));
-  }, [data, item.name]);
+}, [data, item.name]);
 
   return (
     <Reorder.Item 
@@ -409,7 +422,20 @@ const ColumnConfigurator = ({ allColumns, selectedColumns, conversionColumns = [
             <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X size={24} /></button>
           </div>
           
-          {/* ... Search Bar stays the same ... */}
+          {/* SEARCH BAR */}
+          <div className="px-6 py-4 bg-white border-b flex items-center gap-3">
+             <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input 
+                  type="text" 
+                  placeholder="Search available columns..." 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-gray-100 border-none rounded-xl text-sm focus:ring-2 focus:ring-[#3a5a40] outline-none"
+                />
+             </div>
+             <div className="text-xs font-bold text-gray-400 uppercase">{tempSelected.size} selected</div>
+          </div>
 
           <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -532,17 +558,37 @@ export default function Dashboard() {
     const reader = new FileReader();
     reader.onload = (evt) => {
       const workbook = XLSX.read(evt.target.result, { type: "binary" });
-      const sheet1OriginalName = workbook.SheetNames[0];
-      const households = XLSX.utils.sheet_to_json(workbook.Sheets[sheet1OriginalName]);
       
-      if (households.length > 0) {
-        const simplifiedData = households.map(row => {
-          const newRow = { ...row };
+      // 1. Identify Sheets: Sheet 1 is Households, Sheet 2 (or matching name) is Family Members
+      const householdSheetName = workbook.SheetNames[0];
+      const familySheetName = workbook.SheetNames.find(name => 
+        name.toLowerCase().includes("member") || 
+        name.toLowerCase().includes("fam") || 
+        name.toLowerCase().includes("repeat")
+      );
+
+      const rawHouseholds = XLSX.utils.sheet_to_json(workbook.Sheets[householdSheetName]);
+      const rawMembers = familySheetName ? XLSX.utils.sheet_to_json(workbook.Sheets[familySheetName]) : [];
+      
+      if (rawHouseholds.length > 0) {
+        const simplifiedData = rawHouseholds.map(row => {
+          // KEEP FAMILY LINK
+          const members = rawMembers.filter(m => String(m._parent_index) === String(row._index));
+          const newRow = { ...row, _familyMembers: members };
+
+          // IMPROVED GROUP LOGIC: Store as Array for individual counting
           Object.entries(GROUP_DEFINITIONS).forEach(([simpleName, prefix]) => {
             const matchingKeys = Object.keys(row).filter(key => key.startsWith(prefix));
+            
             if (matchingKeys.length > 0) {
-              const activeKey = matchingKeys.find(key => row[key] === 1 || row[key] === "1");
-              newRow[simpleName] = activeKey ? activeKey.replace(prefix, "") : "N/A";
+              const activeSubColumns = matchingKeys
+                .filter(key => row[key] === 1 || row[key] === "1")
+                .map(key => key.replace(prefix, "").trim());
+
+              // Store as Array instead of a joined string
+              // This allows the summary to count "Wood" and "Concrete" separately
+              newRow[simpleName] = activeSubColumns.length > 0 ? activeSubColumns : ["N/A"];
+
               matchingKeys.forEach(key => delete newRow[key]);
             }
           });
@@ -550,21 +596,19 @@ export default function Dashboard() {
         });
 
         setData(simplifiedData);
-        const allCols = Object.keys(simplifiedData[0]);
+        const allCols = Object.keys(simplifiedData[0]).filter(k => !k.startsWith("_"));
         setAllColumns(allCols);
         setActiveColumns(allCols); 
         
         const defaultHouseholdCols = ["Last Name", "Sex at birth", "Age"];
         const existingDefaults = defaultHouseholdCols.filter(col => allCols.includes(col));
-        
         const initialSummaries = existingDefaults.map((col, idx) => ({ 
-          name: col, 
-          color: SYMBOLOGY_COLORS[idx % SYMBOLOGY_COLORS.length] 
+          name: col, color: SYMBOLOGY_COLORS[idx % SYMBOLOGY_COLORS.length] 
         }));
         setActiveSummaries(initialSummaries);
-        
         setShowConfig(true); 
-        const { lat, lng, name } = detectFields(allCols);
+
+        const { lat, lng, name } = detectFields(Object.keys(simplifiedData[0]));
         setLatField(lat); setLngField(lng); setNameField(name);
       }
     };
@@ -594,7 +638,6 @@ export default function Dashboard() {
     }
   };
   const removeSummaryCard = (column) => { setActiveSummaries(activeSummaries.filter((c) => c.name !== column)); };
-  const toggleSize = (column) => { setActiveSummaries(activeSummaries.map((c) => c.name === column ? { ...c, size: c.size === "half" ? "full" : "half" } : c)); };
 
   const getUniqueValues = (columnName) => {
     if (!columnName || !processedData.length) return []; 
@@ -901,7 +944,6 @@ export default function Dashboard() {
                                 </button>
                               </div>
                               
-                              {/* NEW DOWNLOAD BUTTON */}
                               <button 
                                 onClick={handleDownloadFiltered}
                                 disabled={filteredData.length === 0}
@@ -919,13 +961,13 @@ export default function Dashboard() {
                           {selectedHousehold && (
                               <div 
                                   className="fixed inset-0 z-[1001] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-                                  onClick={() => setSelectedHousehold(null)} // Close when clicking the background
+                                  onClick={() => setSelectedHousehold(null)}
                               >
                                   <motion.div 
                                       initial={{ opacity: 0, scale: 0.95, y: 20 }}
                                       animate={{ opacity: 1, scale: 1, y: 0 }}
                                       exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                      onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
+                                      onClick={(e) => e.stopPropagation()} 
                                       className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl h-[85vh] overflow-hidden flex flex-col"
                                   >
                                       {/* Fixed Header */}
