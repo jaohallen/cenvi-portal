@@ -938,37 +938,39 @@ export default function Dashboard() {
 
                                   {/* Value Search with Dropdown Suggestions */}
                                   <div className="relative">
-                                    <input 
-                                      type="text"
-                                      list={`vals-${i}`}
-                                      placeholder="Search or select value..."
+                                    <select
                                       value={f.value}
                                       onChange={(e) => {
                                         const newFilters = [...filters];
                                         newFilters[i].value = e.target.value;
                                         setFilters(newFilters);
                                       }}
-                                      className="w-full text-xs border border-gray-200 rounded pl-2 pr-8 py-2 focus:ring-1 focus:ring-[#3a5a40] outline-none bg-gray-50/30 transition-all"
-                                    />
-                                    {f.value && (
-                                      <button
-                                        onClick={() => {
-                                          const newFilters = [...filters];
-                                          newFilters[i].value = "";
-                                          setFilters(newFilters);
-                                        }}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-red-500 rounded-full hover:bg-gray-100 transition-colors"
-                                        title="Clear input"
-                                      >
-                                        <X size={12} strokeWidth={3} />
-                                      </button>
-                                    )}
-
-                                    <datalist id={`vals-${i}`}>
+                                      className="w-full text-xs border border-gray-200 rounded px-2 py-2 focus:ring-1 focus:ring-[#3a5a40] outline-none bg-gray-50/30 transition-all appearance-none cursor-pointer"
+                                    >
+                                      <option value="">Select unique value...</option>
                                       {getUniqueValues(f.column).map(val => (
-                                        <option key={val} value={val} />
+                                        <option key={val} value={val}>
+                                          {val}
+                                        </option>
                                       ))}
-                                    </datalist>
+                                    </select>
+                                    
+                                    {/* Custom dropdown arrow to maintain styling */}
+                                    <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                      <svg 
+                                        xmlns="http://www.w3.org/2000/svg" 
+                                        width="12" 
+                                        height="12" 
+                                        viewBox="0 0 24 24" 
+                                        fill="none" 
+                                        stroke="currentColor" 
+                                        strokeWidth="3" 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round"
+                                      >
+                                        <path d="m6 9 6 6 6-6"/>
+                                      </svg>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
