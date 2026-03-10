@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
 import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import MarkerClusterGroup from "react-leaflet-cluster";
-import { Reorder, AnimatePresence, motion } from "framer-motion"; // Added motion import
+import { Reorder, AnimatePresence, motion } from "framer-motion";
 import { toPng } from 'html-to-image';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
@@ -18,10 +18,17 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import localforage from "localforage";
 
-// --- Leaflet Icon Fix ---
 import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
+
+import { SYMBOLOGY_COLORS, GROUP_DEFINITIONS } from "../constants/dashboardConstants";
+import {
+  detectFields,
+  createClusterCustomIcon,
+  createSingleCustomIcon
+} from "../utils/dashboardUtils";
+import { applyFilters } from "../utils/filterUtils";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -29,23 +36,6 @@ L.Icon.Default.mergeOptions({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
 });
-
-const SYMBOLOGY_COLORS = [
-  "#3a5a40", "#e76f51", "#2a9d8f", "#e9c46a", "#f4a261", 
-  "#264653", "#d62828", "#457b9d", "#6d597a", "#b5838d"
-];
-
-const GROUP_DEFINITIONS = {
-  "Profile or sector": "Profile or sector:/",
-  "Type of Disability": "Type/s of Disability:/",
-  "Walls": "Walls/",
-  "Roofs": "Roof/",
-  "How is the house powered": "How is the house powered (main source and/or backup)?/",
-  "Method of cooking": "Method of cooking:/",
-  "Water source": "Presence of:/",
-  "Mode of receiving": "Mode of communication (receiving emergency news)/",
-  "Mode of sending": "Communication devices available (sending communication)/"
-};
 
 function FitBounds({ points }) {
   const map = useMap();
@@ -69,35 +59,6 @@ function FitBounds({ points }) {
   });
   return null;
 }
-
-const createClusterCustomIcon = (cluster) => {
-  const count = cluster.getChildCount();
-  let size = "w-10 h-10 text-sm";
-  let colorClass = "bg-[#3a5a40]"; 
-  if (count > 10 && count <= 50) {
-    size = "w-12 h-12 text-base";
-    colorClass = "bg-[#588157]";
-  } else if (count > 50) {
-    size = "w-14 h-14 text-lg";
-    colorClass = "bg-[#344E41]";
-  }
-  return L.divIcon({
-    html: `<div class="flex items-center justify-center ${size} ${colorClass} text-white rounded-full border-4 border-white/50 shadow-lg font-bold">${count}</div>`,
-    className: "bg-transparent",
-    iconSize: L.point(50, 50, true),
-  });
-};
-
-const createSingleCustomIcon = () => {
-  return L.divIcon({
-    html: `<div class="flex items-center justify-center w-8 h-8 bg-[#3a5a40] text-white rounded-full border-2 border-white/80 shadow-md transform hover:scale-110 transition-transform font-bold text-xs">
-            1
-           </div>`,
-    className: "bg-transparent",
-    iconSize: L.point(32, 32),
-    iconAnchor: L.point(16, 16),
-  });
-};
 
 // --- PIVOT BLOCK COMPONENT ---
 const PivotBlock = ({ id, data, columns, config, setConfig, onRemove, canRemove }) => {
@@ -591,14 +552,6 @@ export default function Dashboard() {
      }
   };
 
-  const detectFields = (cols) => {
-    const lowerCols = cols.map((c) => ({ original: c, lower: c.toLowerCase() }));
-    const lat = lowerCols.find(c => c.lower.includes("latitude") || c.lower === "lat" || c.lower.includes("_lat"))?.original;
-    const lng = lowerCols.find(c => c.lower.includes("longitude") || c.lower === "lng" || c.lower === "lon" || c.lower.includes("_lon"))?.original;
-    const name = lowerCols.find(c => c.lower.includes("last name"))?.original || lowerCols.find(c => c.lower.includes("surname"))?.original || lowerCols.find(c => c.lower.includes("household head"))?.original || cols[0];
-    return { lat, lng, name };
-  };
-
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -711,24 +664,43 @@ export default function Dashboard() {
   }, [data, conversionColumns]);
 
   const filteredData = useMemo(() => {
-    if (filters.length === 0) return processedData; 
-
-    return processedData.filter((row) => {
-      return filters.every((f) => {
-        if (!f.column || !f.value || f.value.trim() === "") return true; 
-
-        const cellValue = String(row[f.column] || "").toLowerCase();
-        const filterValue = f.value.toLowerCase();
-
-        switch (f.operator) {
-          case "equals": return cellValue === filterValue;
-          case "contains": return cellValue.includes(filterValue);
-          case "starts_with": return cellValue.startsWith(filterValue);
-          default: return true;
-        }
-      });
-    });
+    return applyFilters(processedData, filters);
   }, [processedData, filters]);
+
+  const dashboardStats = useMemo(() => {
+    const totalHouseholds = processedData.length;
+    const filteredHouseholds = filteredData.length;
+
+    let totalMembers = 0;
+    let householdsWithDisability = 0;
+
+    processedData.forEach(row => {
+      if (row._familyMembers) {
+        totalMembers += row._familyMembers.length;
+      }
+
+      if (row["Type of Disability:"] && row["Type of Disability:"].length > 0) {
+        householdsWithDisability++;
+      }
+    });
+
+    const avgHouseholdSize =
+      totalHouseholds > 0
+        ? (totalMembers / totalHouseholds).toFixed(1)
+        : 0;
+
+    const disabilityPercent =
+      totalHouseholds > 0
+        ? ((householdsWithDisability / totalHouseholds) * 100).toFixed(1)
+        : 0;
+
+    return {
+      totalHouseholds,
+      filteredHouseholds,
+      avgHouseholdSize,
+      disabilityPercent
+    };
+  }, [processedData, filteredData]);
 
   const validPoints = useMemo(() => {
     if (!latField || !lngField) return [];
@@ -783,6 +755,23 @@ export default function Dashboard() {
     const timestamp = new Date().toISOString().split('T')[0];
     XLSX.writeFile(workbook, `CENVI_Filtered_Export_${timestamp}.xlsx`);
   };
+  
+  const singleMarkerIcon = useMemo(() => createSingleCustomIcon(), []);
+  
+  const mapMarkers = useMemo(() => {
+    return validPoints.map((pt, index) => (
+
+      <Marker
+        key={index}
+        position={[pt.lat, pt.lng]}
+        icon={singleMarkerIcon}
+        eventHandlers={{
+          click: () => setSelectedHousehold(pt.row),
+        }}
+      />
+
+    ));
+  }, [validPoints]);
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden pt-20">
@@ -830,6 +819,7 @@ export default function Dashboard() {
       )}
       <div className="flex-1 flex flex-col overflow-hidden bg-gray-50 relative">
         {data.length > 0 && (
+            
             <div className="px-6 py-2 bg-white border-b flex items-center justify-between z-10 shadow-sm">
                 <div className="flex items-center gap-4">
                     <button onClick={() => setSidebarOpen(!isSidebarOpen)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-600 transition" title={isSidebarOpen ? "Hide Sidebar" : "Show Sidebar"}>
@@ -854,22 +844,22 @@ export default function Dashboard() {
                           {validPoints.length > 0 ? (
                               <>
                                   <FitBounds 
-                                    points={filteredData.map(d => [d[latField], d[lngField]])} 
+                                    points={
+                                      latField && lngField
+                                        ? filteredData.map(d => [d[latField], d[lngField]])
+                                        : []
+                                    }
                                     selectedHousehold={selectedHousehold} 
                                   />
                                   <ResetExtentControl points={validPoints.map(p => [p.lat, p.lng])} />
-                                  <MarkerClusterGroup chunkedLoading iconCreateFunction={createClusterCustomIcon}>
-                                    {validPoints.map((pt, index) => (
-                                        <Marker 
-                                            key={index} 
-                                            position={[pt.lat, pt.lng]}
-                                            icon={createSingleCustomIcon(pt)}
-                                            eventHandlers={{
-                                                click: () => setSelectedHousehold(pt.row),
-                                            }}
-                                        />
-                                    ))}
-                                </MarkerClusterGroup>
+                                  <MarkerClusterGroup
+                                    chunkedLoading
+                                    iconCreateFunction={createClusterCustomIcon}
+                                  >
+
+                                  {mapMarkers}
+
+                                  </MarkerClusterGroup>
                               </>
                               
                           ) : (
